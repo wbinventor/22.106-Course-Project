@@ -11,15 +11,19 @@
 #define SURFACE_H_
 
 #include <vector>
-#include "Region1D.h"
+#include "Region.h"
 #include "Neutron.h"
+
+class Region;
+
+#define PI_OVER_TWO 1.57079633
+#define THREE_PI_OVER_TWO 4.71238898
 
 /* Pre-define the Region1D class so the compiler knows it exists */
 class Region1D;
 
 /* The types of boundaries */
 typedef enum boundaryTypes {
-	REFLECTIVE,
 	VACUUM,
 	INTERFACE
 } boundaryType;
@@ -35,30 +39,151 @@ typedef enum boundaryTypes {
  */
 class Surface
 {
-private:
-	float _x;
+protected:
+//	float _x;
 	boundaryType _boundary_type;
-	Region1D* _left_region;
-	Region1D* _right_region;
+	Region* _right_region;
+	Region* _left_region;
 	std::vector<neutron*> _neutrons;
 public:
 	Surface();
 	virtual ~Surface();
 
-	float getX();
     boundaryType getBoundaryType() const;
-    Region1D *getRightRegion() const;
-    Region1D *getLeftRegion() const;
+    Region* getRightRegion() const;
+    Region* getLeftRegion() const;
 
-    void setX(float x);
     void setBoundaryType(boundaryType type);
-    void setLeftRegion(Region1D* left_region);
-    void setRightRegion(Region1D* right_region);
+    void setLeftRegion(Region* left_region);
+    void setRightRegion(Region* right_region);
 
-    void addNeutron(neutron* neutron);
-    bool onSurface(float x);
-    void moveNeutrons();
-    void moveNeutron(neutron* neutron);
+    virtual void addNeutron(neutron* neutron) =0;
+    virtual float computeDistance(neutron* neutron) =0;
+    virtual bool onSurface(neutron* neutron) =0;
+    virtual void moveNeutrons() =0;
 };
+
+
+class XPlane: public Surface {
+private:
+	float _x;
+public:
+	XPlane();
+	virtual ~XPlane();
+	float getX();
+	void setX(float x);
+    void addNeutron(neutron* neutron);
+    float computeDistance(neutron* neutron);
+    bool onSurface(neutron* neutron);
+    void moveNeutrons();
+};
+
+
+class YPlane: public Surface {
+private:
+	float _y;
+public:
+	YPlane();
+	virtual ~YPlane();
+	float getY();
+	void setY(float y);
+    void addNeutron(neutron* neutron);
+    float computeDistance(neutron* neutron);
+    bool onSurface(neutron* neutron);
+    void moveNeutrons();
+};
+
+
+class ZPlane: public Surface {
+private:
+	float _z;
+public:
+	ZPlane();
+	virtual ~ZPlane();
+	float getZ();
+	void setZ(float z);
+    void addNeutron(neutron* neutron);
+    float computeDistance(neutron* neutron);
+    bool onSurface(neutron* neutron);
+    void moveNeutrons();
+};
+
+
+class Circle: public Surface {
+protected:
+	float _r, _r_squared;
+	float _x0, _y0, _z0;
+public:
+	Circle();
+	virtual ~Circle();
+	float getX0();
+	float getY0();
+	float getZ0();
+	float getRadius();
+	void setX0(float x0);
+	void setY0(float y0);
+	void setZ0(float z0);
+	void setRadius(float r);
+    virtual void addNeutron(neutron* neutron) =0;
+    virtual float computeDistance(neutron* neutron) =0;
+    virtual bool onSurface(neutron* neutron) =0;
+    virtual void moveNeutrons() =0;
+};
+
+
+class XCircle: public Circle {
+public:
+	XCircle();
+	virtual ~XCircle();
+    virtual void addNeutron(neutron* neutron);
+    float computeDistance(neutron* neutron);
+    bool onSurface(neutron* neutron);
+    void moveNeutrons();
+};
+
+
+class YCircle: public Circle {
+public:
+	YCircle();
+	virtual ~YCircle();
+    void addNeutron(neutron* neutron);
+    float computeDistance(neutron* neutron);
+    bool onSurface(neutron* neutron);
+    void moveNeutrons();
+};
+
+
+class ZCircle: public Circle {
+public:
+	ZCircle();
+	virtual ~ZCircle();
+    void addNeutron(neutron* neutron);
+    float computeDistance(neutron* neutron);
+    bool onSurface(neutron* neutron);
+    virtual void moveNeutrons();
+};
+
+
+class Sphere: public Surface {
+private:
+	float _r, _r_squared;
+	float _x0, _y0, _z0;
+public:
+	Sphere();
+	virtual ~Sphere();
+	float getX0();
+	float getY0();
+	float getZ0();
+	float getRadius();
+	void setX0(float x0);
+	void setY0(float y0);
+	void setZ0(float z0);
+	void setRadius(float r);
+    virtual void addNeutron(neutron* neutron);
+    float computeDistance(neutron* neutron);
+    bool onSurface(neutron* neutron);
+    void moveNeutrons();
+};
+
 
 #endif /* SURFACE_H_ */

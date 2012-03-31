@@ -14,7 +14,9 @@
 #include "gnuplot.h"
 #include "arraycreator.h"
 #include "Isotope.h"
-#include "Binner.h"
+
+class Isotope;
+
 
 class Material {
 private:
@@ -26,7 +28,6 @@ private:
 
 	/* Values related to rescaled cross-sections on a uniform energy grid */
 	bool _rescaled;
-	binType _scale_type;
 	int _num_energies;
 	float _start_energy;
 	float _end_energy;
@@ -86,8 +87,9 @@ public:
     void addIsotope(Isotope *material, float num_density);
 
     void rescaleCrossSections(float start_energy, float end_energy,
-    						int num_energies, binType scale_type);
+    											int num_energies);
     Isotope* sampleIsotope(float energy);
+    Isotope* sampleIsotope(int energy_index);
     void plotMacroscopicCrossSections(float star_energy, float end_energy,
 									int num_energies, char* isotopes, ...);
     void plotMicroscopicCrossSections(float star_energy, float end_energy,

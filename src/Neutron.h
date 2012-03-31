@@ -10,17 +10,22 @@
 #ifndef NEUTRON_H_
 #define NEUTRON_H_
 
+#include <string>
+#include <sstream>
+
+
 /* Structure to represent a neutron */
 struct neutron {
 	float _x, _y, _z;
 	float _mu, _phi;
 	float _energy;
 	float _weight;
-	bool _infuel;
+	double _time;
 	int _thread_num;
 };
 
 
 neutron* initializeNewNeutron();
+std::string neutronToString(neutron* neutron);
 
 #endif /* NEUTRON_H_ */

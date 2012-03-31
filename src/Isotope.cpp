@@ -1097,6 +1097,40 @@ collisionType Isotope::getCollisionType(float energy) {
  * @param energy the incoming neutron energy (eV)
  * @return the collision type (CAPTURE, SCATTER, INELASTIC, ELASTIC, TOTAL)
  */
+collisionType Isotope::getCollisionType(int energy_index) {
+
+	float test = float(rand()) / RAND_MAX;
+	float collision_xs = 0.0;
+	float next_collision_xs = 0.0;
+	float total_xs = getTotalXS(energy_index);
+	collisionType type = TOTAL;
+
+	/* Loops over all cross-section types to find the one for this energy */
+	std::map<collisionType, float(Isotope::*)(float)
+												const>::const_iterator iter;
+
+	for (iter = _xs_handles.begin(); iter != _xs_handles.end(); ++iter) {
+		next_collision_xs += (this->*iter->second)(energy_index) / total_xs;
+
+		if (test >= collision_xs && test <= next_collision_xs) {
+			type = iter->first;
+			break;
+		}
+
+		/* Update the next collision xs */
+		collision_xs = next_collision_xs;
+	}
+
+	return type;
+}
+
+
+/**
+ * For a given energy, this method determines a random collision type
+ * based on the values of each of its cross-section types at that energy
+ * @param energy the incoming neutron energy (eV)
+ * @return the collision type (CAPTURE, SCATTER, INELASTIC, ELASTIC, TOTAL)
+ */
 collisionType Isotope::getOneGroupCollisionType() {
 
 	float test = float(rand()) / RAND_MAX;
@@ -1722,8 +1756,8 @@ void Isotope::plotSampledThermalScatteringEnergies(float energy,
 												int num_samples) {
 
 	/* Create a new Binner to bin the sampled outgoing energies */
-	Binner* bins = new Binner();
-	bins->generateBinEdges(0.0, energy*30, 50, EQUAL);
+	FluxBinner* bins = new FluxBinner();
+	bins->generateBinEdges(0.0, energy*30, 50, LINEAR);
 
 	float sample;
 

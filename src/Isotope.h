@@ -20,6 +20,8 @@
 #include "xsreader.h"
 #include "Binner.h"
 
+class Binner;
+
 /* Types of collisions */
 typedef enum collisionTypes{
 	CAPTURE,
@@ -158,6 +160,7 @@ public:
     					float* energies, float* prob, int num_bins);
 
     collisionType getCollisionType(float energy);
+    collisionType getCollisionType(int energy_index);
     collisionType getOneGroupCollisionType();
     float getThermalScatteringEnergy(float energy);
     Isotope* clone();

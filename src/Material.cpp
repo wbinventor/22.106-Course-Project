@@ -721,24 +721,14 @@ int Material::getEnergyGridIndex(float energy) {
 		log_printf(ERROR, "Unable to return an index for material %s "
 				"since it has not been rescaled", _material_name);
 
-	if (_scale_type == EQUAL) {
-		if (energy > _end_energy)
-			index = _num_energies - 1;
-		else if (energy < _start_energy)
-			index = 0;
-		else
-			index = floor((energy - _start_energy) / _delta_energy);
-	}
+	energy = log10(energy);
 
-	else if (_scale_type == LOGARITHMIC)
-		energy = log10(energy);
-
-		if (energy > _end_energy)
-			index = _num_energies - 1;
-		else if (energy < _start_energy)
-			index = 0;
-		else
-			index = floor((energy - _start_energy) / _delta_energy);
+	if (energy > _end_energy)
+		index = _num_energies - 1;
+	else if (energy < _start_energy)
+		index = 0;
+	else
+		index = floor((energy - _start_energy) / _delta_energy);
 
 	return index;
 }
@@ -778,25 +768,16 @@ void Material::addIsotope(Isotope* isotope, float num_density) {
 
 
 void Material::rescaleCrossSections(float start_energy, float end_energy,
-								int num_energies, binType scale_type) {
+													int num_energies) {
 
 	float* grid;
 
-	if (scale_type == EQUAL) {
-		grid = linspace<float, float>(start_energy, end_energy, num_energies);
-		_start_energy = start_energy;
-		_end_energy = end_energy;
-		_delta_energy = (_end_energy - _start_energy) / num_energies;
-	}
-	else {
-		grid = logspace<float, float>(start_energy, end_energy, num_energies);
-		_start_energy = log10(start_energy);
-		_end_energy = log10(end_energy);
-		_delta_energy = (_end_energy - _start_energy) / num_energies;
-	}
+	grid = logspace<float, float>(start_energy, end_energy, num_energies);
+	_start_energy = log10(start_energy);
+	_end_energy = log10(end_energy);
+	_delta_energy = (_end_energy - _start_energy) / num_energies;
 
 	_num_energies = num_energies;
-	_scale_type = scale_type;
 
 	/* Loop over all isotopes */
 	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
@@ -833,6 +814,46 @@ Isotope* Material::sampleIsotope(float energy) {
 	for (iter =_isotopes.begin(); iter !=_isotopes.end(); ++iter){
 
 		new_sigma_t_ratio += (iter->second.second->getTotalXS(energy) *
+										iter->second.first * 1E-24) / sigma_t;
+
+		if (test >= sigma_t_ratio && ((test <= new_sigma_t_ratio) ||
+							fabs(test - new_sigma_t_ratio) < 1E-5)) {
+			isotope = iter->second.second;
+			break;
+		}
+		sigma_t_ratio = new_sigma_t_ratio;
+	}
+
+	if (isotope == NULL)
+		log_printf(ERROR, "Unable to find isotope type in material %s"
+				" moveNeutron method, test = %1.20f, new_num_density_ratio "
+				"= %1.20f", _material_name, test, new_sigma_t_ratio);
+
+	return isotope;
+}
+
+
+
+/**
+ * Samples a isotope for a collision with a probability based on the
+ * ratios of each isotope's total cross-section to the total cross-section
+ * of all isotope's in this Material
+ * @param energy_index the index into each isotopes xs grid
+ * @return a pointer to the chosen isotope
+ */
+Isotope* Material::sampleIsotope(int energy_index) {
+
+	float sigma_t = getTotalMacroXS(energy_index);
+	float sigma_t_ratio = 0.0;
+	float new_sigma_t_ratio = 0.0;
+	float test = float(rand()) / RAND_MAX;
+
+	/* Loop over all isotopes */
+	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	Isotope* isotope = NULL;
+	for (iter =_isotopes.begin(); iter !=_isotopes.end(); ++iter){
+
+		new_sigma_t_ratio += (iter->second.second->getTotalXS(energy_index) *
 										iter->second.first * 1E-24) / sigma_t;
 
 		if (test >= sigma_t_ratio && ((test <= new_sigma_t_ratio) ||

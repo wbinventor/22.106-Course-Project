@@ -26,7 +26,23 @@ neutron* initializeNewNeutron() {
 	new_neutron->_phi = 0.0;
 	new_neutron->_mu = 0.0;
 	new_neutron->_weight = 1.0;
+	new_neutron->_energy = 0.0;
+	new_neutron->_time = 0.0;
 	new_neutron->_thread_num = 0;
 	return new_neutron;
 }
 
+
+
+std::string neutronToString(neutron* neutron) {
+
+	std::stringstream result;
+
+	result << "neutron x = " << neutron->_x << " y = " << neutron->_y;
+	result << " z = " << neutron->_z << " energy = " << neutron->_energy;
+	result << " phi = " << neutron->_phi << " mu = " << neutron->_mu;
+	result << " weight = " << neutron->_weight << " time = " << neutron->_time;
+	result << " thread = " << neutron->_thread_num;
+
+	return result.str();
+}

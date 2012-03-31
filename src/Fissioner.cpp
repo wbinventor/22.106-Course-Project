@@ -171,8 +171,8 @@ void Fissioner::plotWattSpectrum(int num_values) {
 void Fissioner::plotSamples(int num_samples) {
 
 	/* Create a linearly spaced array of energy values */
-	Binner* energy_bins = new Binner();
-	energy_bins->generateBinEdges(0, _E_max, 1000, EQUAL);
+	FluxBinner* energy_bins = new FluxBinner();
+	energy_bins->generateBinEdges(0, _E_max, 1000, LINEAR);
 
 
 	/* Sample the CDF and tally the energies */
