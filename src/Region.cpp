@@ -33,7 +33,7 @@ Region::Region() {
  * Region destructor
  */
 Region::~Region() {
-	_surfaces.clear();
+	_boundaries.clear();
 }
 
 
@@ -62,6 +62,14 @@ Material* Region::getMaterial() {
  */
 char* Region::getRegionName() {
 	return _region_name;
+}
+
+/**
+ * Returns the number of neutrons inside of this region
+ * @return the number of neutrons contained by this region
+ */
+int Region::getNumNeutrons() {
+	return _neutrons.size();
 }
 
 
@@ -98,6 +106,30 @@ void Region::setVolume(float volume) {
  */
 void Region::addBinner(Binner* bins) {
 	_bin_sets.push_back(bins);
+}
+
+
+/**
+ * Adds a new region that is contained by this region
+ * @param region a Region contained by this Region
+ */
+void Region::setInteriorRegion(Region* region) {
+	_interior_region = region;
+}
+
+
+/**
+ * Adds a new neutron to this region
+ * @param neutron a pointer to a neutron
+ */
+void Region::addNeutron(neutron* neutron) {
+
+	if (!contains(neutron->_x, neutron->_y, neutron->_z))
+		log_printf(ERROR, "Cannot add a neutron %s to region %s"
+				"since it does not contain it",
+				neutronToString(neutron).c_str(), _region_name);
+
+	_neutrons.push_back(neutron);
 }
 
 
@@ -175,27 +207,6 @@ void Region::clearBinners() {
 	_bin_sets.clear();
 }
 
-/**
- * Adds a new neutron to this region
- * @param neutron a pointer to a neutron
- */
-void Region::addNeutron(neutron* neutron) {
-
-	if (!contains(neutron->_x, neutron->_y, neutron->_z))
-		log_printf(ERROR, "Cannot add a neutron %s to region %s"
-				"since it does not contain it",
-				neutronToString(neutron).c_str(), _region_name);
-
-	_neutrons.push_back(neutron);
-}
-
-/**
- * Returns the number of neutrons inside of this region
- * @return the number of neutrons contained by this region
- */
-int Region::getNumNeutrons() {
-	return _neutrons.size();
-}
 
 float Region::computeMinSurfDist(neutron* neutron, Surface* nearest) {
 
@@ -206,7 +217,7 @@ float Region::computeMinSurfDist(neutron* neutron, Surface* nearest) {
 	/* Loop over all bordering surfaces */
 	std::vector<Surface*>::iterator iter;
 
-	for (iter = _surfaces.begin(); iter != _surfaces.end(); ++iter) {
+	for (iter = _boundaries.begin(); iter != _boundaries.end(); ++iter) {
 
 		/* Compute distance to this Surface */
 		curr_dist = (*iter)->computeDistance(neutron);
@@ -218,6 +229,16 @@ float Region::computeMinSurfDist(neutron* neutron, Surface* nearest) {
 	}
 
 	return min_dist;
+}
+
+
+bool Region::inInteriorRegion(float x, float y, float z) {
+
+	/* Loop over all interior regions to check whether any of them contain this neutron */
+	if (_interior_region->contains(x, y, z))
+		return true;
+	else
+		return false;
 }
 
 
@@ -522,8 +543,14 @@ void Region::moveNeutrons() {
 		 ********************  SURFACE INTERSECTIONS  *********************
 		 *****************************************************************/
 
+		/* Check if this neutron is contained by an interior region */
+		if (inInteriorRegion(new_x, new_y, new_z))
+			min_dist = _interior_region->computeMinSurfDist(curr, nearest);
+
 		/* Find distance to nearest wall along neutron's trajectory */
-		min_dist = computeMinSurfDist(curr, nearest);
+		else
+			min_dist = computeMinSurfDist(curr, nearest);
+
 		nearest->addNeutron(curr);
 		iter1 = _neutrons.erase(iter1);
 		--iter1;
@@ -550,32 +577,32 @@ Parallelepiped::~Parallelepiped() {
 
 void Parallelepiped::setXLeftSurface(XPlane* plane) {
 	_x_left_surface = plane;
-	_surfaces.push_back(plane);
+	_boundaries.push_back(plane);
 }
 
 void Parallelepiped::setXRightSurface(XPlane* plane) {
 	_x_right_surface = plane;
-	_surfaces.push_back(plane);
+	_boundaries.push_back(plane);
 }
 
 void Parallelepiped::setYLeftSurface(YPlane* plane) {
 	_y_left_surface = plane;
-	_surfaces.push_back(plane);
+	_boundaries.push_back(plane);
 }
 
 void Parallelepiped::setYRightSurface(YPlane* plane) {
 	_y_left_surface = plane;
-	_surfaces.push_back(plane);
+	_boundaries.push_back(plane);
 }
 
 void Parallelepiped::setZLeftSurface(ZPlane* plane) {
 	_z_left_surface = plane;
-	_surfaces.push_back(plane);
+	_boundaries.push_back(plane);
 }
 
 void Parallelepiped::setZRightSurface(ZPlane* plane) {
 	_z_left_surface = plane;
-	_surfaces.push_back(plane);
+	_boundaries.push_back(plane);
 }
 
 bool Parallelepiped::contains(float x, float y, float z) {
@@ -585,6 +612,8 @@ bool Parallelepiped::contains(float x, float y, float z) {
 	else if (y < _y_left_surface->getY() || y > _y_right_surface->getY())
 		return false;
 	else if (z < _z_left_surface->getZ() || z > _z_right_surface->getZ())
+		return false;
+	else if (inInteriorRegion(x, y, z))
 		return false;
 
 	return true;
@@ -617,12 +646,12 @@ XCylinder::~XCylinder() {
 
 void XCylinder::setXLeftCircle(XCircle* circle) {
 	_left_circle = circle;
-	_surfaces.push_back(circle);
+	_boundaries.push_back(circle);
 }
 
 void XCylinder::setXRightCircle(XCircle* circle) {
 	_right_circle = circle;
-	_surfaces.push_back(circle);
+	_boundaries.push_back(circle);
 }
 
 
@@ -636,6 +665,8 @@ bool XCylinder::contains(float x, float y, float z) {
 	float r = sqrt((y0 - y)*(y0 - y) + (z0 - z)*(z0 - z));
 
 	if (r > _left_circle->getRadius())
+		return false;
+	else if (inInteriorRegion(x, y, z))
 		return false;
 
 	return true;
@@ -674,12 +705,12 @@ YCylinder::~YCylinder() {
 
 void YCylinder::setYLeftCircle(YCircle* circle) {
 	_left_circle = circle;
-	_surfaces.push_back(circle);
+	_boundaries.push_back(circle);
 }
 
 void YCylinder::setYRightCircle(YCircle* circle) {
 	_right_circle = circle;
-	_surfaces.push_back(circle);
+	_boundaries.push_back(circle);
 }
 
 
@@ -693,6 +724,8 @@ bool YCylinder::contains(float x, float y, float z) {
 	float r = sqrt((x0 - x)*(x0 - x) + (z0 - z)*(z0 - z));
 
 	if (r > _left_circle->getRadius())
+		return false;
+	else if (inInteriorRegion(x, y, z))
 		return false;
 
 	return true;
@@ -731,12 +764,12 @@ ZCylinder::~ZCylinder() {
 
 void ZCylinder::setZLeftCircle(ZCircle* circle) {
 	_left_circle = circle;
-	_surfaces.push_back(circle);
+	_boundaries.push_back(circle);
 }
 
 void ZCylinder::setZRightCircle(ZCircle* circle) {
 	_right_circle = circle;
-	_surfaces.push_back(circle);
+	_boundaries.push_back(circle);
 }
 
 
@@ -750,6 +783,8 @@ bool ZCylinder::contains(float x, float y, float z) {
 	float r = sqrt((x0 - x)*(x0 - x) + (y0 - y)*(y0 - y));
 
 	if (r > _left_circle->getRadius())
+		return false;
+	else if (inInteriorRegion(x, y, z))
 		return false;
 
 	return true;
@@ -776,7 +811,7 @@ bool ZCylinder::onBoundary(neutron* neutron) {
 
 
 /******************************************************************************
- *******************************  ZCylinder  **********************************
+ ********************************  Spheroid  **********************************
  *****************************************************************************/
 
 Spheroid::Spheroid() { };
@@ -800,6 +835,8 @@ bool Spheroid::contains(float x, float y, float z) {
 
 	if (r <= _sphere->getRadius())
 		return true;
+	else if (inInteriorRegion(x, y, z))
+		return false;
 	else
 		return false;
 }
@@ -812,3 +849,56 @@ bool Spheroid::onBoundary(neutron* neutron) {
 	else
 		return false;
 }
+
+
+/******************************************************************************
+ ****************************  Spherical Shell  *******************************
+ *****************************************************************************/
+
+SphericalShell::SphericalShell() { };
+
+
+SphericalShell::~SphericalShell() {
+	delete _inner;
+	delete _outer;
+}
+
+
+void SphericalShell::setInnerSphere(Sphere* sphere) {
+	_inner = sphere;
+}
+
+void SphericalShell::setOuterSphere(Sphere* sphere) {
+	_outer = sphere;
+}
+
+
+bool SphericalShell::contains(float x, float y, float z) {
+
+	float x0 = _inner->getX0();
+	float y0 = _inner->getY0();
+	float z0 = _inner->getZ0();
+
+	float r = sqrt((x - x0)*(x - x0) + (y - y0)*(y - y0) + (z - z0)*(z - z));
+
+	if (r >= _inner->getRadius() && r <= _outer->getRadius())
+		return true;
+	else if (inInteriorRegion(x, y, z))
+		return false;
+	else
+		return false;
+}
+
+
+bool SphericalShell::onBoundary(neutron* neutron) {
+
+	if (_inner->onSurface(neutron) || _outer->onSurface(neutron))
+		return true;
+	else
+		return false;
+}
+
+
+	bool contains(float x, float y, float z);
+
+

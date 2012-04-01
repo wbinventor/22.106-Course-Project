@@ -51,7 +51,10 @@ protected:
 	char* _region_name;
 
 	/* Vector of pointers to the Surfaces which bound this Region */
-	std::vector<Surface*> _surfaces;
+	std::vector<Surface*> _boundaries;
+
+	/* Region, if any, contained by this Region */
+	Region* _interior_region;
 
 	/* Vector of pointers to neutrons contained by this Region */
 	std::vector<neutron*> _neutrons;
@@ -74,24 +77,27 @@ public:
     char* getRegionName();
     Material* getMaterial();
     float getVolume();
+    int getNumNeutrons();
 
     void setRegionName(char* region_name);
     void setMaterial(Material* material);
     void setVolume(float volume);
     void addBinner(Binner* bins);
+    void setInteriorRegion(Region* region);
+    void addNeutron(neutron* neutron);
 
     void useImplicitCapture(float weight_low, float weight_avg);
     void useForcedCollision(float weight_low, float weight_avg);
 
     bool playRussianRoulette(neutron* neutron);
     void clearBinners();
-    void addNeutron(neutron* neutron);
-    int getNumNeutrons();
     float computeMinSurfDist(neutron* neutron, Surface* nearest);
+    bool inInteriorRegion(float x, float y, float z);
+    void moveNeutrons();
 
     virtual bool contains(float x, float y, float z) =0;
     virtual bool onBoundary(neutron* neutron) =0;
-    virtual void moveNeutrons();
+    virtual void transferFromExteriorRegion(neutron* neutron) =0;
 };
 
 class Parallelepiped : public Region {
@@ -166,6 +172,20 @@ public:
 	Spheroid();
 	virtual ~Spheroid();
 	void setSphere(Sphere* sphere);
+	bool contains(float x, float y, float z);
+	bool onBoundary(neutron* neutron);
+};
+
+
+class SphericalShell : public Region {
+private:
+	Sphere* _inner;
+	Sphere* _outer;
+public:
+	SphericalShell();
+	virtual ~SphericalShell();
+	void setInnerSphere(Sphere* sphere);
+	void setOuterSphere(Sphere* sphere);
 	bool contains(float x, float y, float z);
 	bool onBoundary(neutron* neutron);
 };
