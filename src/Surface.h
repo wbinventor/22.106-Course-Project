@@ -40,7 +40,6 @@ typedef enum boundaryTypes {
 class Surface
 {
 protected:
-//	float _x;
 	boundaryType _boundary_type;
 	Region* _right_region;
 	Region* _left_region;

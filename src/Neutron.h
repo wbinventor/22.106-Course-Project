@@ -12,6 +12,10 @@
 
 #include <string>
 #include <sstream>
+#include <math.h>
+
+#define C 3E2				/* Speed of light (m/us) */
+#define M_N 939.565E6		/* Mass of neutron in eV */
 
 
 /* Structure to represent a neutron */
@@ -26,6 +30,8 @@ struct neutron {
 
 
 neutron* initializeNewNeutron();
+void updateNeutronTime(neutron* neutron, float path_length);
+void updateNeutronTime(neutron* neutron, float new_x, float new_y, float new_z);
 std::string neutronToString(neutron* neutron);
 
 #endif /* NEUTRON_H_ */

@@ -303,12 +303,13 @@ void Region::moveNeutrons() {
 			/* Figure out the collision type */
 			collision_type = isotope->getCollisionType(energy_index);
 
+			/* Update the neutron time */
+			updateNeutronTime(curr, path_length);
+
 			/* Update the neutron position */
 			curr->_x = new_x;
 			curr->_y = new_y;
 			curr->_z = new_z;
-
-			log_printf(DEBUG, "collision type = %d", collision_type);
 
 			/* Tally neutron for each binner */
 			for (iter2 = _bin_sets.begin(); iter2 != _bin_sets.end(); ++iter2)
@@ -368,9 +369,6 @@ void Region::moveNeutrons() {
 				new_neutron->_thread_num = curr->_thread_num;
 				new_neutron->_weight = curr->_weight * px;
 
-				//FIXME: need to compute time to traverse region using subroutine
-				new_neutron->_time = curr->_time;
-
 				/* Figure out which surface to put uncollided neutron on */
 				nearest->addNeutron(new_neutron);
 
@@ -378,10 +376,16 @@ void Region::moveNeutrons() {
 				path_length =  log(1.0 - float(rand()/RAND_MAX) *
 											(1.0 - px)) / sigma_t;
 				theta = acos(curr->_mu);
-				new_x = curr->_x + path_length * cos(curr->_phi) * sin(theta);
-				new_y = curr->_y + path_length * sin(curr->_phi) * sin(theta);
-				new_z = curr->_z + path_length * curr->_mu;
+
+				new_neutron->_x = curr->_x + path_length *
+												cos(curr->_phi) * sin(theta);
+				new_neutron->_y = curr->_y + path_length *
+												sin(curr->_phi) * sin(theta);
+				new_neutron->_z = curr->_z + path_length * curr->_mu;
+
 				curr->_weight *= (1.0 - px);
+
+				updateNeutronTime(new_neutron, path_length);
 			}
 
 			/******************************************************************
@@ -400,7 +404,7 @@ void Region::moveNeutrons() {
 			}
 
 			/* Check if collision type was fission and if so kill neutron */
-			if (collision_type == FISSION && !_use_implicit_capture) {
+			else if (collision_type == FISSION && !_use_implicit_capture) {
 
 				log_printf(DEBUG, "Fission type collision");
 
@@ -527,7 +531,7 @@ void Region::moveNeutrons() {
 			}
 
 			/* Play Russian Roulette with neutron */
-			if (curr->_weight < _weight_low && !_use_forced_collision) {
+			if (curr->_weight < _weight_low && _use_implicit_capture) {
 				if (playRussianRoulette(curr)) {
 					log_printf(DEBUG, "Killing neutron");
 					iter1 = _neutrons.erase(iter1);
@@ -551,6 +555,7 @@ void Region::moveNeutrons() {
 		else
 			min_dist = computeMinSurfDist(curr, nearest);
 
+		updateNeutronTime(curr, min_dist);
 		nearest->addNeutron(curr);
 		iter1 = _neutrons.erase(iter1);
 		--iter1;
@@ -591,7 +596,7 @@ void Parallelepiped::setYLeftSurface(YPlane* plane) {
 }
 
 void Parallelepiped::setYRightSurface(YPlane* plane) {
-	_y_left_surface = plane;
+	_y_right_surface = plane;
 	_boundaries.push_back(plane);
 }
 
@@ -601,7 +606,7 @@ void Parallelepiped::setZLeftSurface(ZPlane* plane) {
 }
 
 void Parallelepiped::setZRightSurface(ZPlane* plane) {
-	_z_left_surface = plane;
+	_z_right_surface = plane;
 	_boundaries.push_back(plane);
 }
 
@@ -897,8 +902,3 @@ bool SphericalShell::onBoundary(neutron* neutron) {
 	else
 		return false;
 }
-
-
-	bool contains(float x, float y, float z);
-
-

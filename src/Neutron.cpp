@@ -33,6 +33,39 @@ neutron* initializeNewNeutron() {
 }
 
 
+void updateNeutronTime(neutron* neutron, float path_length) {
+
+	/* Compute velocity in m/s */
+	double velocity = sqrt(2.0 * neutron->_energy / M_N) * C;
+
+	/* Update neutron's time */
+	neutron->_time += path_length / velocity;
+
+	return;
+}
+
+
+void updateNeutronTime(neutron* neutron, float x, float y, float z) {
+
+	float x0 = neutron->_x;
+	float y0 = neutron->_y;
+	float z0 = neutron->_z;
+
+	/* Compute path length */
+	float path_length = sqrt((x0 - x)*(x0 - x) +
+							 (y0 - y)*(y0 - y) +
+							 (z0 - z)*(z0 - z));
+
+	/* Compute velocity in m/s */
+	double velocity = sqrt(2.0 * neutron->_energy / M_N) * C;
+
+	/* Update neutron's time */
+	neutron->_time += path_length / velocity;
+
+	return;
+}
+
+
 
 std::string neutronToString(neutron* neutron) {
 

@@ -126,6 +126,12 @@ double* Binner::getBinCenters() {
  * @return the spacing between bins
  */
 float Binner::getBinDelta() {
+
+	if (_bin_type != LINEAR && _bin_type != LOGARITHMIC)
+		log_printf(ERROR, "Cannot return the bin delta for a set"
+				" of bins that do not have LINEAR or LOGARITHMIC spaced"
+				" bin edges");
+
 	return _bin_delta;
 }
 
@@ -606,7 +612,8 @@ void Binner::processTallyAccumulators() {
 		/* Loop over all threads */
 		for (int j=0; j < _num_threads; j++) {
 			_tallies[i] += _tally_acc[i*_num_threads+j];
-			_tallies_squared[i] += (_tally_acc[i*_num_threads+j] * _tally_acc[i*_num_threads+j]);
+			_tallies_squared[i] += (_tally_acc[i*_num_threads+j] *
+									_tally_acc[i*_num_threads+j]);
 			_tally_acc[i*_num_threads+j] = 0.0;
 		}
 	}
@@ -672,6 +679,10 @@ void Binner::outputHistoryStatistics(const char* filename) {
 }
 
 
+/******************************************************************************
+ ********************************  FluxBinner  ********************************
+ *****************************************************************************/
+
 FluxBinner::FluxBinner() { };
 
 FluxBinner::~FluxBinner() { };
@@ -697,13 +708,19 @@ void FluxBinner::weightedTally(neutron* neutron, float sigma_t,
 	return;
 }
 
+
+
+/******************************************************************************
+ ****************************  CaptureRateBinner  *****************************
+ *****************************************************************************/
+
 CaptureRateBinner::CaptureRateBinner() { };
 
 
 CaptureRateBinner::~CaptureRateBinner() { };
 
 void CaptureRateBinner::weightedTally(neutron* neutron, float sigma_t,
-							int energy_index, Material* material, Isotope* isotope) {
+					int energy_index, Material* material, Isotope* isotope) {
 
 	if (_num_bins == 0)
 		 log_printf(ERROR, "Cannot tally weighted sample in Binner %s since "
@@ -727,6 +744,11 @@ void CaptureRateBinner::weightedTally(neutron* neutron, float sigma_t,
 	return;
 }
 
+
+
+/******************************************************************************
+ **************************  AbsorptionRateBinner  ****************************
+ *****************************************************************************/
 
 AbsorptionRateBinner::AbsorptionRateBinner() { };
 
@@ -756,6 +778,12 @@ void AbsorptionRateBinner::weightedTally(neutron* neutron, float sigma_t,
 
 	return;
 }
+
+
+
+/******************************************************************************
+ ****************************  ElasticRateBinner  *****************************
+ *****************************************************************************/
 
 ElasticRateBinner::ElasticRateBinner() { };
 
@@ -787,6 +815,10 @@ void ElasticRateBinner::weightedTally(neutron* neutron, float sigma_t,
 }
 
 
+/******************************************************************************
+ ***************************  InelasticRateBinner  ****************************
+ *****************************************************************************/
+
 InelasticRateBinner::InelasticRateBinner() { };
 
 InelasticRateBinner::~InelasticRateBinner() { };
@@ -815,6 +847,11 @@ void InelasticRateBinner::weightedTally(neutron* neutron, float sigma_t,
 
 	return;
 }
+
+
+/******************************************************************************
+ ****************************  FissionRateBinner  *****************************
+ *****************************************************************************/
 
 FissionRateBinner::FissionRateBinner() { };
 
@@ -845,6 +882,11 @@ void FissionRateBinner::weightedTally(neutron* neutron, float sigma_t,
 	return;
 }
 
+
+/******************************************************************************
+ ***************************  TransportRateBinner  ****************************
+ *****************************************************************************/
+
 TransportRateBinner::TransportRateBinner() { };
 
 TransportRateBinner::~TransportRateBinner() { };
@@ -874,6 +916,11 @@ void TransportRateBinner::weightedTally(neutron* neutron, float sigma_t,
 	return;
 }
 
+
+/******************************************************************************
+ ***************************  CollisionRateBinner  ****************************
+ *****************************************************************************/
+
 CollisionRateBinner::CollisionRateBinner() { };
 
 CollisionRateBinner::~CollisionRateBinner() { };
@@ -897,6 +944,12 @@ void CollisionRateBinner::weightedTally(neutron* neutron, float sigma_t,
 
 	return;
 }
+
+
+
+/******************************************************************************
+ ***************************  DiffusionRateBinner  ****************************
+ *****************************************************************************/
 
 DiffusionRateBinner::DiffusionRateBinner() { };
 
