@@ -20,10 +20,10 @@ class Isotope;
 
 class Material {
 private:
-	char* _material_name;
+	std::string _material_name;
 
 	/* Map of number density and isotope pointers */
-	std::map<char*, std::pair<float, Isotope*> > _isotopes;
+	std::map<std::string, std::pair<float, Isotope*> > _isotopes;
 	float _tot_num_density;
 
 	/* Values related to rescaled cross-sections on a uniform energy grid */
@@ -35,7 +35,7 @@ private:
 public:
 	Material();
 	virtual ~Material();
-	char* getMaterialName();
+	std::string getMaterialName();
     float getTotalNumberDensity();
     Isotope* getIsotope(char* isotope);
     float getIsotopeNumDensity(char* isotope);
@@ -83,7 +83,7 @@ public:
     bool isRescaled();
     int getEnergyGridIndex(float energy);
 
-    void setMaterialName(char* name);
+    void setMaterialName(std::string name);
     void addIsotope(Isotope *material, float num_density);
 
     void rescaleCrossSections(float start_energy, float end_energy,

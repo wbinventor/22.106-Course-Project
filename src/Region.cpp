@@ -250,7 +250,7 @@ void Region::moveNeutrons() {
 	if (!_material->isRescaled())
 		log_printf(ERROR, "Region %s is unable to move neutrons since it's "
 				"Material %s has not been rescaled",
-				_region_name, _material->getMaterialName());
+				_region_name, _material->getMaterialName().c_str());
 
 	int energy_index;
 	float sigma_t;
@@ -298,7 +298,7 @@ void Region::moveNeutrons() {
 			isotope = _material->sampleIsotope(energy_index);
 
 			log_printf(DEBUG, "Neutron collided in isotope: %s",
-											isotope->getIsotopeType());
+								isotope->getIsotopeType().c_str());
 
 			/* Figure out the collision type */
 			collision_type = isotope->getCollisionType(energy_index);
@@ -647,6 +647,7 @@ XCylinder::XCylinder() { };
 XCylinder::~XCylinder() {
 	delete _left_circle;
 	delete _right_circle;
+	delete _cylinder;
 };
 
 void XCylinder::setXLeftCircle(XCircle* circle) {
@@ -659,6 +660,9 @@ void XCylinder::setXRightCircle(XCircle* circle) {
 	_boundaries.push_back(circle);
 }
 
+void XCylinder::setOpenXCylinder(OpenXCylinder* cylinder) {
+	_cylinder = cylinder;
+}
 
 bool XCylinder::contains(float x, float y, float z) {
 
@@ -680,19 +684,14 @@ bool XCylinder::contains(float x, float y, float z) {
 
 bool XCylinder::onBoundary(neutron* neutron) {
 
-	if (_left_circle->onSurface(neutron) || _right_circle->onSurface(neutron))
+	if (_left_circle->onSurface(neutron))
 		return true;
-
-	float y0 = _left_circle->getY0();
-	float z0 = _left_circle->getZ0();
-	float y = neutron->_y;
-	float z = neutron->_z;
-	float r = sqrt((y0 - y)*(y0 - y) + (z0 - z)*(z0 - z));
-
-	if (fabs(r - _left_circle->getRadius()) < 1E-6)
+	else if (_right_circle->onSurface(neutron))
 		return true;
-
-	return false;
+	else if (_cylinder->onSurface(neutron))
+		return true;
+	else
+		return false;
 }
 
 
@@ -706,6 +705,7 @@ YCylinder::YCylinder() { };
 YCylinder::~YCylinder() {
 	delete _left_circle;
 	delete _right_circle;
+	delete _cylinder;
 };
 
 void YCylinder::setYLeftCircle(YCircle* circle) {
@@ -718,6 +718,9 @@ void YCylinder::setYRightCircle(YCircle* circle) {
 	_boundaries.push_back(circle);
 }
 
+void YCylinder::setOpenYCylinder(OpenYCylinder* cylinder) {
+	_cylinder = cylinder;
+}
 
 bool YCylinder::contains(float x, float y, float z) {
 
@@ -739,19 +742,14 @@ bool YCylinder::contains(float x, float y, float z) {
 
 bool YCylinder::onBoundary(neutron* neutron) {
 
-	if (_left_circle->onSurface(neutron) || _right_circle->onSurface(neutron))
+	if (_left_circle->onSurface(neutron))
 		return true;
-
-	float x0 = _left_circle->getX0();
-	float z0 = _left_circle->getZ0();
-	float x = neutron->_x;
-	float z = neutron->_z;
-	float r = sqrt((x0 - x)*(x0 - x) + (z0 - z)*(z0 - z));
-
-	if (fabs(r - _left_circle->getRadius()) < 1E-6)
+	else if (_right_circle->onSurface(neutron))
 		return true;
-
-	return false;
+	else if (_cylinder->onSurface(neutron))
+		return true;
+	else
+		return false;
 }
 
 
@@ -765,6 +763,7 @@ ZCylinder::ZCylinder() { };
 ZCylinder::~ZCylinder() {
 	delete _left_circle;
 	delete _right_circle;
+	delete _cylinder;
 };
 
 void ZCylinder::setZLeftCircle(ZCircle* circle) {
@@ -777,6 +776,9 @@ void ZCylinder::setZRightCircle(ZCircle* circle) {
 	_boundaries.push_back(circle);
 }
 
+void ZCylinder::setOpenZCylinder(OpenZCylinder* cylinder) {
+	_cylinder = cylinder;
+}
 
 bool ZCylinder::contains(float x, float y, float z) {
 
@@ -798,19 +800,15 @@ bool ZCylinder::contains(float x, float y, float z) {
 
 bool ZCylinder::onBoundary(neutron* neutron) {
 
-	if (_left_circle->onSurface(neutron) || _right_circle->onSurface(neutron))
+
+	if (_left_circle->onSurface(neutron))
 		return true;
-
-	float x0 = _left_circle->getX0();
-	float y0 = _left_circle->getY0();
-	float x = neutron->_x;
-	float y = neutron->_y;
-	float r = sqrt((x0 - x)*(x0 - x) + (y0 - y)*(y0 - y));
-
-	if (fabs(r - _left_circle->getRadius()) < 1E-6)
+	else if (_right_circle->onSurface(neutron))
 		return true;
-
-	return false;
+	else if (_cylinder->onSurface(neutron))
+		return true;
+	else
+		return false;
 }
 
 

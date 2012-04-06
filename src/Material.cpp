@@ -14,7 +14,7 @@
  * Material constructor sets empty default material name
  */
 Material::Material() {
-	_material_name = (char*)"";
+	_material_name = "";
 	_rescaled = false;
 }
 
@@ -22,23 +22,14 @@ Material::Material() {
 /**
  * Material destructor deletes all isotopes within it
  */
-Material::~Material() {
-
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
-	Isotope* curr;
-
-	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter) {
-		curr = iter->second.second;
-		delete curr;
-	}
-}
+Material::~Material() { }
 
 
 /**
  * Returns the name of this Material as specified by the user
  * @return the name of this Material
  */
-char* Material::getMaterialName() {
+std::string Material::getMaterialName() {
 	return _material_name;
 }
 
@@ -86,7 +77,7 @@ float Material::getTotalMacroXS(float energy) {
 	float sigma_t = 0;
 
 	/* Increment sigma_t for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_t += iter->second.second->getTotalXS(energy)
 											* iter->second.first * 1E-24;
@@ -106,7 +97,7 @@ float Material::getTotalMacroXS(int energy_index) {
 	float sigma_t = 0;
 
 	/* Increment sigma_t for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_t += iter->second.second->getTotalXS(energy_index)
 										* iter->second.first * 1E-24;
@@ -126,7 +117,7 @@ float Material::getTotalMicroXS(float energy) {
 	float sigma_t = 0;
 
 	/* Increment sigma_t for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_t += iter->second.second->getTotalXS(energy);
 
@@ -145,7 +136,7 @@ float Material::getTotalMicroXS(int energy_index) {
 	float sigma_t = 0;
 
 	/* Increment sigma_t for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_t += iter->second.second->getTotalXS(energy_index);
 
@@ -164,7 +155,7 @@ float Material::getCaptureMacroXS(float energy) {
 	float sigma_c = 0;
 
 	/* Increment sigma_a for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_c += iter->second.second->getCaptureXS(energy) *
 											iter->second.first * 1E-24;
@@ -184,7 +175,7 @@ float Material::getCaptureMacroXS(int energy_index) {
 	float sigma_c = 0;
 
 	/* Increment sigma_t for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_c += iter->second.second->getCaptureXS(energy_index)
 										* iter->second.first * 1E-24;
@@ -204,7 +195,7 @@ float Material::getCaptureMicroXS(float energy) {
 	float sigma_a = 0;
 
 	/* Increment sigma_a for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_a += iter->second.second->getCaptureXS(energy);
 
@@ -223,7 +214,7 @@ float Material::getCaptureMicroXS(int energy_index) {
 	float sigma_c = 0;
 
 	/* Increment sigma_t for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_c += iter->second.second->getCaptureXS(energy_index);
 
@@ -242,7 +233,7 @@ float Material::getScatterMacroXS(float energy){
 	float sigma_s = 0;
 
 	/* Increment sigma_s for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter) {
 		sigma_s += iter->second.second->getScatterXS(energy)
 												* iter->second.first * 1E-24;
@@ -263,7 +254,7 @@ float Material::getScatterMacroXS(int energy_index) {
 	float sigma_s = 0;
 
 	/* Increment sigma_s for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_s += iter->second.second->getScatterXS(energy_index)
 										* iter->second.first * 1E-24;
@@ -283,7 +274,7 @@ float Material::getScatterMicroXS(float energy){
 	float sigma_s = 0;
 
 	/* Increment sigma_s for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_s += iter->second.second->getScatterXS(energy);
 
@@ -302,7 +293,7 @@ float Material::getScatterMicroXS(int energy_index) {
 	float sigma_s = 0;
 
 	/* Increment sigma_s for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_s += iter->second.second->getScatterXS(energy_index);
 
@@ -321,7 +312,7 @@ float Material::getElasticMacroXS(float energy) {
 	float sigma_s = 0;
 
 	/* Increment sigma_s for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_s += iter->second.second->getElasticXS(energy)
 												* iter->second.first * 1E-24;
@@ -341,7 +332,7 @@ float Material::getElasticMacroXS(int energy_index) {
 	float sigma_e = 0;
 
 	/* Increment sigma_e for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_e += iter->second.second->getElasticXS(energy_index)
 										* iter->second.first * 1E-24;
@@ -361,7 +352,7 @@ float Material::getElasticMicroXS(float energy) {
 	float sigma_s = 0;
 
 	/* Increment sigma_s for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_s += iter->second.second->getElasticXS(energy);
 
@@ -380,7 +371,7 @@ float Material::getElasticMicroXS(int energy_index) {
 	float sigma_e = 0;
 
 	/* Increment sigma_e for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_e += iter->second.second->getElasticXS(energy_index);
 
@@ -399,7 +390,7 @@ float Material::getInelasticMacroXS(float energy) {
 	float sigma_s = 0;
 
 	/* Increment sigma_s for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_s += iter->second.second->getInelasticXS(energy)
 												* iter->second.first * 1E-24;
@@ -419,7 +410,7 @@ float Material::getInelasticMacroXS(int energy_index) {
 	float sigma_ie = 0;
 
 	/* Increment sigma_ie for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_ie += iter->second.second->getInelasticXS(energy_index)
 										* iter->second.first * 1E-24;
@@ -439,7 +430,7 @@ float Material::getInelasticMicroXS(float energy) {
 	float sigma_s = 0;
 
 	/* Increment sigma_s for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_s += iter->second.second->getInelasticXS(energy);
 
@@ -458,7 +449,7 @@ float Material::getInelasticMicroXS(int energy_index) {
 	float sigma_ie = 0;
 
 	/* Increment sigma_ie for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_ie += iter->second.second->getInelasticXS(energy_index);
 
@@ -477,7 +468,7 @@ float Material::getFissionMacroXS(float energy) {
 	float sigma_f = 0;
 
 	/* Increment sigma_f for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_f += iter->second.second->getFissionXS(energy) *
 											iter->second.first * 1E-24;
@@ -497,7 +488,7 @@ float Material::getFissionMacroXS(int energy_index) {
 	float sigma_f = 0;
 
 	/* Increment sigma_f for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_f += iter->second.second->getFissionXS(energy_index)
 										* iter->second.first * 1E-24;
@@ -517,7 +508,7 @@ float Material::getFissionMicroXS(float energy) {
 	float sigma_f = 0;
 
 	/* Increment sigma_f for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_f += iter->second.second->getFissionXS(energy);
 
@@ -536,7 +527,7 @@ float Material::getFissionMicroXS(int energy_index) {
 	float sigma_f = 0;
 
 	/* Increment sigma_f for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_f += iter->second.second->getFissionXS(energy_index);
 
@@ -554,7 +545,7 @@ float Material::getAbsorbMacroXS(float energy) {
 	float sigma_a = 0;
 
 	/* Increment sigma_a for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_a += iter->second.second->getAbsorbXS(energy) *
 											iter->second.first * 1E-24;
@@ -574,7 +565,7 @@ float Material::getAbsorbMacroXS(int energy_index) {
 	float sigma_a = 0;
 
 	/* Increment sigma_f for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_a += iter->second.second->getAbsorbXS(energy_index)
 										* iter->second.first * 1E-24;
@@ -593,7 +584,7 @@ float Material::getAbsorbMicroXS(float energy) {
 	float sigma_a = 0;
 
 	/* Increment sigma_a for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_a += iter->second.second->getAbsorbXS(energy);
 
@@ -612,7 +603,7 @@ float Material::getAbsorbMicroXS(int energy_index) {
 	float sigma_a = 0;
 
 	/* Increment sigma_f for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_a += iter->second.second->getAbsorbXS(energy_index);
 
@@ -630,7 +621,7 @@ float Material::getTransportMicroXS(float energy) {
 	float sigma_tr = 0;
 
 	/* Increment sigma_a for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_tr += iter->second.second->getTransportXS(energy);
 
@@ -649,7 +640,7 @@ float Material::getTransportMacroXS(int energy_index) {
 	float sigma_tr = 0;
 
 	/* Increment sigma_f for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_tr += iter->second.second->getTransportXS(energy_index)
 										* iter->second.first * 1E-24;
@@ -668,7 +659,7 @@ float Material::getTransportMacroXS(float energy) {
 	float sigma_tr = 0;
 
 	/* Increment sigma_a for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_tr += iter->second.second->getTransportXS(energy) *
 										iter->second.first * 1E-24;
@@ -688,7 +679,7 @@ float Material::getTransportMicroXS(int energy_index) {
 	float sigma_tr = 0;
 
 	/* Increment sigma_f for each isotope */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	for (iter = _isotopes.begin(); iter != _isotopes.end(); ++iter)
 		sigma_tr += iter->second.second->getTransportXS(energy_index);
 
@@ -719,7 +710,7 @@ int Material::getEnergyGridIndex(float energy) {
 
 	if (!_rescaled)
 		log_printf(ERROR, "Unable to return an index for material %s "
-				"since it has not been rescaled", _material_name);
+				"since it has not been rescaled", _material_name.c_str());
 
 	energy = log10(energy);
 
@@ -738,7 +729,7 @@ int Material::getEnergyGridIndex(float energy) {
  * Sets this Material's name as defined by the user
  * @param name the name of this Material
  */
-void Material::setMaterialName(char* name) {
+void Material::setMaterialName(std::string name) {
 	_material_name = name;
 }
 
@@ -756,7 +747,7 @@ void Material::addIsotope(Isotope* isotope, float num_density) {
 
 	std::pair<char*, std::pair<float, Isotope*> > new_isotope =
 							std::pair<char*, std::pair<float, Isotope*> >
-									(isotope->getIsotopeType(), new_pair);
+					((char*)isotope->getIsotopeType().c_str(), new_pair);
 
 	/* Inserts the isotope and increments the total number density */
 	_isotopes.insert(new_isotope);
@@ -780,7 +771,7 @@ void Material::rescaleCrossSections(float start_energy, float end_energy,
 	_num_energies = num_energies;
 
 	/* Loop over all isotopes */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	Isotope* isotope;
 
 	for (iter =_isotopes.begin(); iter !=_isotopes.end(); ++iter){
@@ -809,7 +800,7 @@ Isotope* Material::sampleIsotope(float energy) {
 	float test = float(rand()) / RAND_MAX;
 
 	/* Loop over all isotopes */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	Isotope* isotope = NULL;
 	for (iter =_isotopes.begin(); iter !=_isotopes.end(); ++iter){
 
@@ -827,7 +818,7 @@ Isotope* Material::sampleIsotope(float energy) {
 	if (isotope == NULL)
 		log_printf(ERROR, "Unable to find isotope type in material %s"
 				" moveNeutron method, test = %1.20f, new_num_density_ratio "
-				"= %1.20f", _material_name, test, new_sigma_t_ratio);
+				"= %1.20f", _material_name.c_str(), test, new_sigma_t_ratio);
 
 	return isotope;
 }
@@ -849,7 +840,7 @@ Isotope* Material::sampleIsotope(int energy_index) {
 	float test = float(rand()) / RAND_MAX;
 
 	/* Loop over all isotopes */
-	std::map<char*, std::pair<float, Isotope*> >::iterator iter;
+	std::map<std::string, std::pair<float, Isotope*> >::iterator iter;
 	Isotope* isotope = NULL;
 	for (iter =_isotopes.begin(); iter !=_isotopes.end(); ++iter){
 
@@ -867,7 +858,7 @@ Isotope* Material::sampleIsotope(int energy_index) {
 	if (isotope == NULL)
 		log_printf(ERROR, "Unable to find isotope type in material %s"
 				" moveNeutron method, test = %1.20f, new_num_density_ratio "
-				"= %1.20f", _material_name, test, new_sigma_t_ratio);
+				"= %1.20f", _material_name.c_str(), test, new_sigma_t_ratio);
 
 	return isotope;
 }
@@ -976,7 +967,7 @@ void Material::plotMicroscopicCrossSections(float start_energy,
 	/* Initialize the plot */
 	gnuplot_ctrl* handle = gnuplot_init();
 	gnuplot_set_xlabel(handle, (char*)"Energy (eV)");
-	gnuplot_set_ylabel(handle, (char*)"Cross-section (cm^-1)");
+	gnuplot_set_ylabel(handle, (char*)"Cross-section (barns)");
 	gnuplot_cmd(handle, (char*)title.str().c_str());
 	gnuplot_cmd(handle, (char*)"set logscale xy");
 	gnuplot_setstyle(handle, (char*)"lines");

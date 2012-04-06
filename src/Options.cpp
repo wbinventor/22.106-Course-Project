@@ -26,7 +26,7 @@ Options::Options(int argc, const char **argv) {
 	_num_batches = 10;
 	_num_neutrons = 1000;
 	_num_threads = 1;
-	_test = false;
+	_soil_type = DRY_POROUS;
 	_use_implicit_capture = false;
 	_use_forced_collision = false;
 	_weight_low = 0.1;
@@ -43,8 +43,14 @@ Options::Options(int argc, const char **argv) {
 				_num_neutrons = atoi(argv[i]);
 			else if (LAST("-nthreads"))
 				_num_threads = atoi(argv[i]);
-			else if (strcmp(argv[i], "-t") == 0)
-				_test = true;
+			else if (LAST("-dp"))
+				_soil_type = DRY_POROUS;
+			else if (LAST("-dd"))
+				_soil_type = DRY_DENSE;
+			else if (LAST("-wp"))
+				_soil_type = WET_POROUS;
+			else if (LAST("-wd"))
+				_soil_type = WET_DENSE;
 			else if (strcmp(argv[i], "-ic") == 0)
 				_use_implicit_capture = true;
 			else if (strcmp(argv[i], "-fc") == 0)
@@ -80,10 +86,10 @@ int Options::getNumThreads() const {
 	return _num_threads;
 }
 
-
-bool Options::executeTestProblem() const {
-	return _test;
+soilType Options::getSoilType() const {
+	return _soil_type;
 }
+
 
 bool Options::useImplicitCapture() const {
 	return _use_implicit_capture;

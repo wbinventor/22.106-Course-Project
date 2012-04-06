@@ -1043,7 +1043,8 @@ float Sphere::computeDistance(neutron* neutron) {
 bool Sphere::onSurface(neutron* neutron) {
 
 	float r_squared = (neutron->_x - _x0) * (neutron->_x - _x0) +
-						(neutron->_y - _y0) * (neutron->_y - _y0);
+						(neutron->_y - _y0) * (neutron->_y - _y0) +
+						(neutron->_z - _z0) * (neutron->_z - _z0);
 
 	if (fabs(r_squared - _r_squared) < 1E-6)
 		return true;
@@ -1094,3 +1095,601 @@ void Sphere::moveNeutrons() {
 	/* Clear all neutrons from this surface */
 	_neutrons.clear();
 }
+
+
+/******************************************************************************
+ ***************************   OpenCylinder  **********************************
+ *****************************************************************************/
+
+OpenCylinder::OpenCylinder() {
+	_x0 = 0;
+	_y0 = 0;
+	_z0 = 0;
+	_r = 0;
+	_r_squared = 0;
+};
+
+
+OpenCylinder::~OpenCylinder() { };
+
+
+float OpenCylinder::getX0() {
+	return _x0;
+}
+
+
+float OpenCylinder::getY0() {
+	return _y0;
+}
+
+
+float OpenCylinder::getZ0() {
+	return _z0;
+}
+
+
+float OpenCylinder::getRadius() {
+	return _r;
+}
+
+
+void OpenCylinder::setX0(float x0) {
+	_x0 = x0;
+}
+
+
+void OpenCylinder::setY0(float y0) {
+	_y0 = y0;
+}
+
+
+void OpenCylinder::setZ0(float z0) {
+	_z0 = z0;
+}
+
+
+void OpenCylinder::setRadius(float r) {
+	_r = r;
+	_r_squared = r*r;
+}
+
+
+/******************************************************************************
+ **************************   OpenXCylinder   *********************************
+ *****************************************************************************/
+
+OpenXCylinder::OpenXCylinder() { };
+
+OpenXCylinder::~OpenXCylinder() { };
+
+
+float OpenXCylinder::getXLeft() {
+	return _x_left;
+}
+
+
+float OpenXCylinder::getXRight() {
+	return _x_right;
+}
+
+
+void OpenXCylinder::setXLeft(float x_left) {
+	_x_left = x_left;
+}
+
+
+void OpenXCylinder::setXRight(float x_right) {
+	_x_right = x_right;
+}
+
+
+void OpenXCylinder::addNeutron(neutron* neutron) {
+
+	/* Compute intersetion point of neutron with OpenXCylinder */
+	float dist = computeDistance(neutron);
+
+	float vx = cos(neutron->_phi) * sin(acos(neutron->_mu));
+	float vy = sin(neutron->_phi) * sin(acos(neutron->_mu));
+	float vz = neutron->_mu;
+
+	float t = dist / sqrt(vx*vx + vy*vy + vz*vz);
+
+	/* Update neutron's position to the intersection point */
+	neutron->_x += vx*t;
+	neutron->_y += vy*t;
+	neutron->_z += vz*t;
+
+	_neutrons.push_back(neutron);
+}
+
+
+float OpenXCylinder::computeDistance(neutron* neutron) {
+
+	/* Set dist to infinity to begin with */
+	float dist = std::numeric_limits<float>::infinity();
+	float x = neutron->_x;
+	float y = neutron->_y;
+	float z = neutron->_z;
+	float vx = cos(neutron->_phi) * sin(acos(neutron->_mu));
+	float vy = sin(neutron->_phi) * sin(acos(neutron->_mu));
+	float vz = neutron->_mu;
+
+	float a = vy*vy + vz*vz;
+	float b = 2*y*vy + 2*z*vz;
+	float c = y*y + z*z -1;
+
+	float discr = b*b - 4.0*a*c;
+
+	/* There is not an intersection point */
+	if (discr < 0)
+		return dist;
+
+	/* There is one intersection point */
+	else if (discr == 0) {
+		float t = -b / (2.0*a);
+		float new_x = x + vx*t;
+		if (t >= 0 && new_x >= _x_left && new_x <= _x_right) {
+			float new_z = z + vz*t;
+			float new_y = y + vy*t;
+			dist = sqrt((new_x - x)*(new_x - x) +
+						(new_y - y)*(new_y - y) +
+						(new_z - z)*(new_z - z));
+		}
+
+		return dist;
+	}
+
+	/* There are two intersection points */
+	else {
+		float t1 = (-b + sqrt(discr)) / (2.0*a);
+		float t2 = (-b - sqrt(discr)) / (2.0*a);
+		float new_x1 = y + vx*t1;
+		float new_x2 = y + vx*t2;
+		float new_y, new_z;
+		float test_dist1 = std::numeric_limits<float>::infinity();
+		float test_dist2 = std::numeric_limits<float>::infinity();
+
+		if (t1 >= 0 && new_x1 >= _x_left && new_x1 <= _x_right) {
+			new_z = z + vz*t1;
+			new_y = y + vy*t1;
+			test_dist1 = sqrt((new_y - y)*(new_y - y) +
+						(new_z - z)*(new_z - z) +
+						(new_x1 - x)*(new_x1 - x));
+		}
+
+		if (t2 >= 0 && new_x2 >= _x_left && new_x2 <= _x_right) {
+			float new_z = z + vz*t2;
+			float new_y = y + vy*t2;
+			test_dist2 = sqrt((new_y - y)*(new_y - y) +
+						(new_z- z)*(new_z - z) +
+						(new_x2 - x)*(new_x2 - x));
+		}
+
+		if (test_dist1 < test_dist2)
+			return test_dist1;
+		else
+			return test_dist2;
+	}
+}
+
+
+
+bool OpenXCylinder::onSurface(neutron* neutron) {
+
+	if (neutron->_x < _x_left || neutron->_x > _x_right)
+		return false;
+
+	float r_squared = (neutron->_y - _y0) * (neutron->_y - _y0) +
+						(neutron->_z - _z0) * (neutron->_z - _z0);
+
+	if (r_squared <= _r_squared)
+		return true;
+	else
+		return false;
+}
+
+
+
+void OpenXCylinder::moveNeutrons() {
+	log_printf(DEBUG, "Inside OpenXCylinder moveNeutrons method");
+
+	neutron* curr;
+
+	std::vector<neutron*>::iterator iter;
+	for (iter = _neutrons.begin(); iter != _neutrons.end(); ++iter) {
+
+		curr = (*iter);
+
+		log_printf(DEBUG, "Moving neutron %s", neutronToString(curr).c_str());
+
+		/* If the neutron is not on the Surface, print error message */
+		if (!onSurface(curr))
+			log_printf(ERROR, "Cannot move a neutron off of "
+					"OpenXCylinder x = %f since it is not on the Surface", _x0);
+
+		else {
+			/* If the surface is a vacuum, kill neutron */
+			if (_boundary_type == VACUUM) {
+				iter = _neutrons.erase(iter);
+				--iter;
+				delete curr;
+			}
+
+			/* If the surface is an interface between two regions */
+			else {
+
+				/* Figure out which region to put neutron in */
+				if (curr->_z >= _z0 && curr->_mu <= 0)
+					_left_region->addNeutron(curr);
+				else if (curr->_z <= _z0 && curr->_mu >= 0)
+					_left_region->addNeutron(curr);
+				else
+					_right_region->addNeutron(curr);
+			}
+		}
+	}
+
+	/* Clear all neutrons from this surface */
+	_neutrons.clear();
+}
+
+
+/******************************************************************************
+ **************************   OpenYCylinder   *********************************
+ *****************************************************************************/
+
+OpenYCylinder::OpenYCylinder() { };
+
+OpenYCylinder::~OpenYCylinder() { };
+
+
+float OpenYCylinder::getYLeft() {
+	return _y_left;
+}
+
+
+float OpenYCylinder::getYRight() {
+	return _y_right;
+}
+
+
+void OpenYCylinder::setYLeft(float y_left) {
+	_y_left = y_left;
+}
+
+
+void OpenYCylinder::setYRight(float y_right) {
+	_y_right = y_right;
+}
+
+void OpenYCylinder::addNeutron(neutron* neutron) {
+
+	/* Compute intersetion point of neutron with OpenYCylinder */
+	float dist = computeDistance(neutron);
+
+	float vx = cos(neutron->_phi) * sin(acos(neutron->_mu));
+	float vy = sin(neutron->_phi) * sin(acos(neutron->_mu));
+	float vz = neutron->_mu;
+
+	float t = dist / sqrt(vx*vx + vy*vy + vz*vz);
+
+	/* Update neutron's position to the intersection point */
+	neutron->_x += vx*t;
+	neutron->_y += vy*t;
+	neutron->_z += vz*t;
+
+	_neutrons.push_back(neutron);
+}
+
+
+float OpenYCylinder::computeDistance(neutron* neutron) {
+
+	/* Set dist to infinity to begin with */
+	float dist = std::numeric_limits<float>::infinity();
+	float x = neutron->_x;
+	float y = neutron->_y;
+	float z = neutron->_z;
+	float vx = cos(neutron->_phi) * sin(acos(neutron->_mu));
+	float vy = sin(neutron->_phi) * sin(acos(neutron->_mu));
+	float vz = neutron->_mu;
+
+	float a = vx*vx + vz*vz;
+	float b = 2*x*vx + 2*z*vz;
+	float c = x*x + z*z -1;
+
+	float discr = b*b - 4.0*a*c;
+
+	/* There is not an intersection point */
+	if (discr < 0)
+		return dist;
+
+	/* There is one intersection point */
+	else if (discr == 0) {
+		float t = -b / (2.0*a);
+		float new_y = y + vy*t;
+		if (t >= 0 && new_y >= _y_left && new_y <= _y_right) {
+			float new_z = z + vz*t;
+			float new_x = x + vx*t;
+			dist = sqrt((new_x - x)*(new_x - x) +
+						(new_y - y)*(new_y - y) +
+						(new_z - z)*(new_z - z));
+		}
+
+		return dist;
+	}
+
+	/* There are two intersection points */
+	else {
+		float t1 = (-b + sqrt(discr)) / (2.0*a);
+		float t2 = (-b - sqrt(discr)) / (2.0*a);
+		float new_y1 = y + vy*t1;
+		float new_y2 = y + vy*t2;
+		float new_x, new_z;
+		float test_dist1 = std::numeric_limits<float>::infinity();
+		float test_dist2 = std::numeric_limits<float>::infinity();
+
+		if (t1 >= 0 && new_y1 >= _y_left && new_y1 <= _y_right) {
+			new_z = z + vz*t1;
+			new_x = x + vx*t1;
+			test_dist1 = sqrt((new_x - x)*(new_x - x) +
+						(new_z - z)*(new_z - z) +
+						(new_y1 - y)*(new_y1 - y));
+		}
+
+		if (t2 >= 0 && new_y2 >= _y_left && new_y2 <= _y_right) {
+			float new_z = z + vz*t2;
+			float new_x = x + vx*t2;
+			test_dist2 = sqrt((new_x - x)*(new_x - x) +
+						(new_z- z)*(new_z - z) +
+						(new_y2 - y)*(new_y2 - y));
+		}
+
+		if (test_dist1 < test_dist2)
+			return test_dist1;
+		else
+			return test_dist2;
+	}
+}
+
+
+
+bool OpenYCylinder::onSurface(neutron* neutron) {
+
+	if (neutron->_y < _y_left || neutron->_y > _y_right)
+		return false;
+
+	float r_squared = (neutron->_x - _x0) * (neutron->_x - _x0) +
+						(neutron->_z - _z0) * (neutron->_z - _z0);
+
+	if (r_squared <= _r_squared)
+		return true;
+	else
+		return false;
+}
+
+
+
+void OpenYCylinder::moveNeutrons() {
+	log_printf(DEBUG, "Inside OpenYCylinder moveNeutrons method");
+
+	neutron* curr;
+
+	std::vector<neutron*>::iterator iter;
+	for (iter = _neutrons.begin(); iter != _neutrons.end(); ++iter) {
+
+		curr = (*iter);
+
+		log_printf(DEBUG, "Moving neutron %s", neutronToString(curr).c_str());
+
+		/* If the neutron is not on the Surface, print error message */
+		if (!onSurface(curr))
+			log_printf(ERROR, "Cannot move a neutron off of "
+					"OpenYCylinder y = %f since it is not on the Surface", _y0);
+
+		else {
+			/* If the surface is a vacuum, kill neutron */
+			if (_boundary_type == VACUUM) {
+				iter = _neutrons.erase(iter);
+				--iter;
+				delete curr;
+			}
+
+			/* If the surface is an interface between two regions */
+			else {
+
+				/* Figure out which region to put neutron in */
+				if (curr->_z >= _z0 && curr->_mu <= 0)
+					_left_region->addNeutron(curr);
+				else if (curr->_z <= _z0 && curr->_mu >= 0)
+					_left_region->addNeutron(curr);
+				else
+					_right_region->addNeutron(curr);
+			}
+		}
+	}
+
+	/* Clear all neutrons from this surface */
+	_neutrons.clear();
+}
+
+
+/******************************************************************************
+ **************************   OpenZCylinder   *********************************
+ *****************************************************************************/
+
+OpenZCylinder::OpenZCylinder() { };
+
+OpenZCylinder::~OpenZCylinder() { };
+
+
+float OpenZCylinder::getZLeft() {
+	return _z_left;
+}
+
+
+float OpenZCylinder::getZRight() {
+	return _z_right;
+}
+
+
+void OpenZCylinder::setZLeft(float z_left) {
+	_z_left = z_left;
+}
+
+
+void OpenZCylinder::setZRight(float z_right) {
+	_z_right = z_right;
+}
+
+void OpenZCylinder::addNeutron(neutron* neutron) {
+
+	/* Compute intersetion point of neutron with OpenZCylinder */
+	float dist = computeDistance(neutron);
+
+	float vx = cos(neutron->_phi) * sin(acos(neutron->_mu));
+	float vy = sin(neutron->_phi) * sin(acos(neutron->_mu));
+	float vz = neutron->_mu;
+
+	float t = dist / sqrt(vx*vx + vy*vy + vz*vz);
+
+	/* Update neutron's position to the intersection point */
+	neutron->_x += vx*t;
+	neutron->_y += vy*t;
+	neutron->_z += vz*t;
+
+	_neutrons.push_back(neutron);
+}
+
+
+float OpenZCylinder::computeDistance(neutron* neutron) {
+
+	/* Set dist to infinity to begin with */
+	float dist = std::numeric_limits<float>::infinity();
+	float x = neutron->_x;
+	float y = neutron->_y;
+	float z = neutron->_z;
+	float vx = cos(neutron->_phi) * sin(acos(neutron->_mu));
+	float vy = sin(neutron->_phi) * sin(acos(neutron->_mu));
+	float vz = neutron->_mu;
+
+	float a = vx*vx + vy*vy;
+	float b = 2*x*vx + 2*y*vy;
+	float c = x*x + y*y -1;
+
+	float discr = b*b - 4.0*a*c;
+
+	/* There is not an intersection point */
+	if (discr < 0)
+		return dist;
+
+	/* There is one intersection point */
+	else if (discr == 0) {
+		float t = -b / (2.0*a);
+		float new_z = z + vz*t;
+		if (t >= 0 && new_z >= _z_left && new_z <= _z_right) {
+			float new_y = y + vy*t;
+			float new_x = x + vx*t;
+			dist = sqrt((new_x - x)*(new_x - x) +
+						(new_y - y)*(new_y - y) +
+						(new_z - z)*(new_z - z));
+		}
+
+		return dist;
+	}
+
+	/* There are two intersection points */
+	else {
+		float t1 = (-b + sqrt(discr)) / (2.0*a);
+		float t2 = (-b - sqrt(discr)) / (2.0*a);
+		float new_z1 = z + vz*t1;
+		float new_z2 = z + vz*t2;
+		float new_x, new_y;
+		float test_dist1 = std::numeric_limits<float>::infinity();
+		float test_dist2 = std::numeric_limits<float>::infinity();
+
+		if (t1 >= 0 && new_z1 >= _z_left && new_z1 <= _z_right) {
+			new_y = y + vy*t1;
+			new_x = x + vx*t1;
+			test_dist1 = sqrt((new_x - x)*(new_x - x) +
+						(new_y - y)*(new_y - y) +
+						(new_z1 - z)*(new_z1 - z));
+		}
+
+		if (t2 >= 0 && new_z2 >= _z_left && new_z2 <= _z_right) {
+			float new_y = y + vy*t2;
+			float new_x = x + vx*t2;
+			test_dist2 = sqrt((new_x - x)*(new_x - x) +
+						(new_y- y)*(new_y - y) +
+						(new_z2 - z)*(new_z2 - z));
+		}
+
+		if (test_dist1 < test_dist2)
+			return test_dist1;
+		else
+			return test_dist2;
+	}
+}
+
+
+
+bool OpenZCylinder::onSurface(neutron* neutron) {
+
+	if (neutron->_z < _z_left || neutron->_z > _z_right)
+		return false;
+
+	float r_squared = (neutron->_x - _x0) * (neutron->_x - _x0) +
+						(neutron->_y - _y0) * (neutron->_y - _y0);
+
+	if (r_squared <= _r_squared)
+		return true;
+	else
+		return false;
+}
+
+
+
+void OpenZCylinder::moveNeutrons() {
+	log_printf(DEBUG, "Inside OpenZCylinder moveNeutrons method");
+
+	neutron* curr;
+	float phi, delta_phi;
+
+	std::vector<neutron*>::iterator iter;
+	for (iter = _neutrons.begin(); iter != _neutrons.end(); ++iter) {
+
+		curr = (*iter);
+
+		log_printf(DEBUG, "Moving neutron %s", neutronToString(curr).c_str());
+
+		/* If the neutron is not on the Surface, print error message */
+		if (!onSurface(curr))
+			log_printf(ERROR, "Cannot move a neutron off of "
+					"OpenZCylinder z = %f since it is not on the Surface", _z0);
+
+		else {
+			/* If the surface is a vacuum, kill neutron */
+			if (_boundary_type == VACUUM) {
+				iter = _neutrons.erase(iter);
+				--iter;
+				delete curr;
+			}
+
+			/* If the surface is an interface between two regions */
+			else {
+
+				/* Figure out which region to put neutron in */
+				phi = atan((curr->_y - _y0) / (curr->_y - _y0));
+				delta_phi = curr->_phi - phi;
+
+				if (delta_phi > PI_OVER_TWO && delta_phi < THREE_PI_OVER_TWO)
+					_left_region->addNeutron(curr);
+				else
+					_right_region->addNeutron(curr);
+			}
+		}
+	}
+
+	/* Clear all neutrons from this surface */
+	_neutrons.clear();
+}
+

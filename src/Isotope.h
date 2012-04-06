@@ -46,7 +46,7 @@ typedef enum scatterAngleTypes {
 class Isotope
 {
 private:
-	char* _isotope_name;
+	std::string _isotope_name;
 	int _A;
 	float _alpha;
 	float _eta;
@@ -95,7 +95,7 @@ public:
 	Isotope();
     virtual ~Isotope();
 
-    char* getIsotopeType() const;
+    std::string getIsotopeType();
     int getA() const;
     float getAlpha() const;
     float getN() const;
@@ -130,11 +130,11 @@ public:
     float getInelasticScatterEnergy(float energy);
     bool usesThermalScattering();
 
-    void setIsotopeType(char* isotope);
+    void setIsotopeType(std::string isotope);
     void setA(int A);
     void setN(float N);
     void setTemperature(float T);
-    void loadXS(char* filename, collisionType type, char* delimiter);
+    void loadXS(std::string filename, collisionType type, std::string delimiter);
     void setCaptureXS(float* capture_xs, float* capture_xs_energies,
     											int num_capture_xs);
     void setOneGroupCaptureXS(float capture_xs);

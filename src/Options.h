@@ -17,13 +17,21 @@
 #include <stdlib.h>
 #include "log.h"
 
+typedef enum soilTypes {
+	DRY_POROUS,
+	DRY_DENSE,
+	WET_POROUS,
+	WET_DENSE
+} soilType;
+
+
 class Options {
 private:
 	int _num_bins;
 	int _num_batches;
 	int _num_neutrons;
 	int _num_threads;
-	bool _test;
+	soilType _soil_type;
 	bool _use_implicit_capture;
 	bool _use_forced_collision;
 	float _weight_low;
@@ -36,7 +44,7 @@ public:
     int getNumBatches() const;
     int getNumNeutrons() const;
     int getNumThreads() const;
-    bool executeTestProblem() const;
+    soilType getSoilType() const;
     bool useImplicitCapture() const;
     bool useForcedCollision() const;
     float getWeightLow() const;

@@ -29,6 +29,9 @@ class XCircle;
 class YCircle;
 class ZCircle;
 class Sphere;
+class OpenXCylinder;
+class OpenYCylinder;
+class OpenZCylinder;
 
 
 typedef enum varianceReduceTypes {
@@ -97,7 +100,6 @@ public:
 
     virtual bool contains(float x, float y, float z) =0;
     virtual bool onBoundary(neutron* neutron) =0;
-    virtual void transferFromExteriorRegion(neutron* neutron) =0;
 };
 
 class Parallelepiped : public Region {
@@ -127,11 +129,13 @@ class XCylinder : public Region {
 private:
 	XCircle* _left_circle;
 	XCircle* _right_circle;
+	OpenXCylinder* _cylinder;
 public:
 	XCylinder();
 	virtual ~XCylinder();
 	void setXLeftCircle(XCircle* circle);
 	void setXRightCircle(XCircle* circle);
+	void setOpenXCylinder(OpenXCylinder* cylinder);
 	bool contains(float x, float y, float z);
     bool onBoundary(neutron* neutron);
 };
@@ -141,11 +145,13 @@ class YCylinder : public Region {
 private:
 	YCircle* _left_circle;
 	YCircle* _right_circle;
+	OpenYCylinder* _cylinder;
 public:
 	YCylinder();
 	virtual ~YCylinder();
 	void setYLeftCircle(YCircle* circle);
 	void setYRightCircle(YCircle* circle);
+	void setOpenYCylinder(OpenYCylinder* cylinder);
 	bool contains(float x, float y, float z);
     bool onBoundary(neutron* neutron);
 };
@@ -155,11 +161,13 @@ class ZCylinder : public Region {
 private:
 	ZCircle* _left_circle;
 	ZCircle* _right_circle;
+	OpenZCylinder* _cylinder;
 public:
 	ZCylinder();
 	virtual ~ZCylinder();
 	void setZLeftCircle(ZCircle* circle);
 	void setZRightCircle(ZCircle* circle);
+	void setOpenZCylinder(OpenZCylinder* cylinder);
 	bool contains(float x, float y, float z);
     bool onBoundary(neutron* neutron);
 };

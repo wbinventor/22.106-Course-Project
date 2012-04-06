@@ -18,6 +18,7 @@ class Region;
 
 #define PI_OVER_TWO 1.57079633
 #define THREE_PI_OVER_TWO 4.71238898
+#define TWO_PI 6.28318531
 
 /* Pre-define the Region1D class so the compiler knows it exists */
 class Region1D;
@@ -159,7 +160,7 @@ public:
     void addNeutron(neutron* neutron);
     float computeDistance(neutron* neutron);
     bool onSurface(neutron* neutron);
-    virtual void moveNeutrons();
+    void moveNeutrons();
 };
 
 
@@ -178,11 +179,78 @@ public:
 	void setY0(float y0);
 	void setZ0(float z0);
 	void setRadius(float r);
-    virtual void addNeutron(neutron* neutron);
+    void addNeutron(neutron* neutron);
     float computeDistance(neutron* neutron);
     bool onSurface(neutron* neutron);
     void moveNeutrons();
 };
 
+class OpenCylinder: public Surface {
+protected:
+	float _r, _r_squared;
+	float _x0, _y0, _z0;
+public:
+	OpenCylinder();
+	virtual ~OpenCylinder();
+	float getX0();
+	float getY0();
+	float getZ0();
+	float getRadius();
+	void setX0(float x0);
+	void setY0(float y0);
+	void setZ0(float z0);
+	void setRadius(float r);
+    virtual void addNeutron(neutron* neutron) =0;
+    virtual float computeDistance(neutron* neutron) =0;
+    virtual bool onSurface(neutron* neutron) =0;
+    virtual void moveNeutrons() =0;
+};
 
+class OpenXCylinder: public OpenCylinder {
+private:
+	float _x_left, _x_right;
+public:
+	OpenXCylinder();
+	virtual ~OpenXCylinder();
+	float getXLeft();
+	float getXRight();
+	void setXLeft(float x_left);
+	void setXRight(float x_right);
+    void addNeutron(neutron* neutron);
+    float computeDistance(neutron* neutron);
+    bool onSurface(neutron* neutron);
+    void moveNeutrons();
+};
+
+class OpenYCylinder: public OpenCylinder {
+private:
+	float _y_left, _y_right;
+public:
+	OpenYCylinder();
+	virtual ~OpenYCylinder();
+	float getYLeft();
+	float getYRight();
+	void setYLeft(float y_left);
+	void setYRight(float y_right);
+    void addNeutron(neutron* neutron);
+    float computeDistance(neutron* neutron);
+    bool onSurface(neutron* neutron);
+    void moveNeutrons();
+};
+
+class OpenZCylinder: public OpenCylinder {
+private:
+	float _z_left, _z_right;
+public:
+	OpenZCylinder();
+	virtual ~OpenZCylinder();
+	float getZLeft();
+	float getZRight();
+	void setZLeft(float z_left);
+	void setZRight(float z_right);
+    void addNeutron(neutron* neutron);
+    float computeDistance(neutron* neutron);
+    bool onSurface(neutron* neutron);
+    void moveNeutrons();
+};
 #endif /* SURFACE_H_ */

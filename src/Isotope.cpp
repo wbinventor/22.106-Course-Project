@@ -84,7 +84,7 @@ Isotope::~Isotope() {
  * Returns the name of the of isotope
  * @return character array with name of isotope
  */
-char* Isotope::getIsotopeType() const {
+std::string Isotope::getIsotopeType() {
 	return _isotope_name;
 }
 
@@ -167,7 +167,7 @@ float Isotope::getCaptureXS(int energy_index) const {
 	else if (energy_index > _num_capture_xs)
 		log_printf(ERROR, "Unable to retrieve capture xs for"
 				" isotope %s since the energy index %d is out of"
-				" bounds", _isotope_name, energy_index);
+				" bounds", _isotope_name.c_str(), energy_index);
 
 	return _capture_xs[energy_index];
 }
@@ -246,7 +246,7 @@ float Isotope::getScatterXS(int energy_index) const {
 	else if (energy_index > _num_scatter_xs)
 		log_printf(ERROR, "Unable to retrieve scatter xs for"
 				" isotope %s since the energy index %d is out of"
-				" bounds", _isotope_name, energy_index);
+				" bounds", _isotope_name.c_str(), energy_index);
 
 	return _scatter_xs[energy_index];
 }
@@ -289,7 +289,8 @@ scatterAngleType Isotope::getScatterAngleType() const {
 
 	if (_num_scatter_xs == 0 && _num_inelastic_xs == 0 && _num_elastic_xs == 0)
 		log_printf(ERROR, "Cannot return a scatter angle type"
-				"for isotope %s since it has not been set", _isotope_name);
+				"for isotope %s since it has not been set",
+				_isotope_name.c_str());
 
 	/* If this isotope has both inelastic and elastic scattering */
 	else if (_num_scatter_xs == 0 && _num_inelastic_xs != 0
@@ -343,7 +344,7 @@ float Isotope::getInelasticXS(int energy_index) const {
 	else if (energy_index > _num_inelastic_xs)
 		log_printf(ERROR, "Unable to retrieve inelastic xs for"
 				" isotope %s since the energy index %d is out of"
-				" bounds", _isotope_name, energy_index);
+				" bounds", _isotope_name.c_str(), energy_index);
 
 	return _inelastic_xs[energy_index];
 }
@@ -371,7 +372,8 @@ float Isotope::getOneGroupInelasticXS() const {
 scatterAngleType Isotope::getInelasticAngleType() const {
 	if (_num_inelastic_xs == 0)
 		log_printf(ERROR, "Cannot return an inelastic angle type"
-				"for isotope %s since it has not been set", _isotope_name);
+				"for isotope %s since it has not been set",
+				_isotope_name.c_str());
 
 	return _inelastic_angle;
 }
@@ -409,7 +411,7 @@ float Isotope::getElasticXS(int energy_index) const {
 	else if (energy_index > _num_elastic_xs)
 		log_printf(ERROR, "Unable to retrieve elastic xs for"
 				" isotope %s since the energy index %d is out of"
-				" bounds", _isotope_name, energy_index);
+				" bounds", _isotope_name.c_str(), energy_index);
 
 	return _elastic_xs[energy_index];
 }
@@ -437,7 +439,8 @@ scatterAngleType Isotope::getElasticAngleType() const {
 
 	if (_num_elastic_xs == 0)
 		log_printf(ERROR, "Cannot return an elastic angle type"
-				"for isotope %s since it has not been set", _isotope_name);
+				"for isotope %s since it has not been set",
+				_isotope_name.c_str());
 
 	return _elastic_angle;
 }
@@ -475,7 +478,7 @@ float Isotope::getFissionXS(int energy_index) const {
 	else if (energy_index > _num_fission_xs)
 		log_printf(ERROR, "Unable to retrieve fission xs for"
 				" isotope %s since the energy index %d is out of"
-				" bounds", _isotope_name, energy_index);
+				" bounds", _isotope_name.c_str(), energy_index);
 
 	return _fission_xs[energy_index];
 }
@@ -569,7 +572,7 @@ float Isotope::getTotalXS(int energy_index) const {
 		if (energy_index > _num_total_xs)
 			log_printf(ERROR, "Unable to retrieve total xs for"
 					" isotope %s since the energy index %d is out of"
-					" bounds", _isotope_name, energy_index);
+					" bounds", _isotope_name.c_str(), energy_index);
 
 		return _total_xs[energy_index];
 	}
@@ -643,7 +646,8 @@ float Isotope::getInelasticScatterEnergy(float energy) {
 
 	if (_num_inelastic_xs == 0)
 		log_printf(ERROR, "Cannot return an inelastic cross-section"
-				"for isotope %s since it has not been set", _isotope_name);
+				"for isotope %s since it has not been set",
+				_isotope_name.c_str());
 
 	std::map<std::pair<float, float>, std::pair<std::pair<float*, float*>,
 													int> >::iterator iter;
@@ -700,7 +704,7 @@ bool Isotope::usesThermalScattering() {
  * Set the isotope name
  * @param istope a character array of the isotopes name
  */
-void Isotope::setIsotopeType(char* isotope) {
+void Isotope::setIsotopeType(std::string isotope) {
 	_isotope_name = isotope;
 }
 
@@ -742,18 +746,19 @@ void Isotope::setTemperature(float T) {
  * @param angle_type the type of angle (only used for scattering)
  * @param delimiter the character between data values in file
  */
-void Isotope::loadXS(char* filename, collisionType type, char* delimiter) {
+void Isotope::loadXS(std::string filename, collisionType type,
+												std::string delimiter) {
 
 	/* Find the number of cross-section values in the file */
-	int num_xs_values = getNumCrossSectionDataPoints(filename);
+	int num_xs_values = getNumCrossSectionDataPoints(filename.c_str());
 
 	/* Initialize data structures to store cross-section values */
 	float* energies = new float[num_xs_values];
 	float* xs_values = new float[num_xs_values];
 
 	/* Parse the file into the data structures */
-	parseCrossSections(filename, energies, xs_values, num_xs_values,
-														delimiter);
+	parseCrossSections(filename.c_str(), energies, xs_values, num_xs_values,
+														delimiter.c_str());
 
 	/* Set this isotope's appropriate cross-section using the data
 	 * structures */
@@ -1166,7 +1171,7 @@ float Isotope::getThermalScatteringEnergy(float energy) {
 	if (_num_thermal_cdfs == 0)
 		log_printf(ERROR, "Unable to sample the thermal scattering CDFs for"
 				" isotope %s because they have not yet been initialized",
-																_isotope_name);
+														_isotope_name.c_str());
 
 	/* Convert energies in eV to eV / kT */
 	energy /= (_kB * _T);
@@ -1603,6 +1608,8 @@ void Isotope::rescaleXS(float* energies, int num_energies) {
  */
 void Isotope::plotXS(float start_energy, float end_energy, int num_energies,
 													collisionType types, ...) {
+
+	log_printf(NORMAL, "Plotting xs for isotope: %s", _isotope_name.c_str());
 
 	/* Create an array of logarithmically spaced energies */
 	float* energies = logspace<float, float>(start_energy,
