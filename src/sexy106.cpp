@@ -23,7 +23,6 @@
 #include "Region.h"
 
 
-//TODO: Adjust materials
 //TODO: Test different region types
 //TODO: Create neutron source
 //TODO: Tie different types of regions together
@@ -356,36 +355,16 @@ int main(int argc, const char **argv) {
 	soil.addIsotope(&Mg25, rho_Mg25_soil);
 	soil.addIsotope(&Mg26, rho_Mg26_soil);
 	soil.rescaleCrossSections(1E-5, 2E6, 50000);
-//	soil.plotMicroscopicCrossSections(1E-5, 2E6, 5000, (char*)"H1",
-//			(char*)"O16", (char*)"Si28", (char*)"Si29", (char*)"Si30",
-//			(char*)"Al27", (char*)"Fe54", (char*)"Fe56", (char*)"Fe57",
-//			(char*)"Fe58", (char*)"Ca40", (char*)"Ca42", (char*)"Ca44",
-//			(char*)"K39", (char*)"K41", (char*)"Na23", (char*)"Mg24",
-//			(char*)"Mg25", (char*)"Mg26", NULL);
-//	soil.plotMacroscopicCrossSections(1E-5, 2E6, 5000, (char*)"H1",
-//			(char*)"O16", (char*)"Si28", (char*)"Si29", (char*)"Si30",
-//			(char*)"Al27", (char*)"Fe54", (char*)"Fe56", (char*)"Fe57",
-//			(char*)"Fe58", (char*)"Ca40", (char*)"Ca42", (char*)"Ca44",
-//			(char*)"K39", (char*)"K41", (char*)"Na23", (char*)"Mg24",
-//			(char*)"Mg25", (char*)"Mg26", NULL);
 
 	air.setMaterialName("air");
 	air.addIsotope(&N14, rho_N14_air);
 	air.addIsotope(&O16, rho_O16_air);
 	air.addIsotope(&Ar40, rho_Ar40_air);
 	air.rescaleCrossSections(1E-5, 2E6, 50000);
-//	air.plotMicroscopicCrossSections(1E-5, 2E6, 5000,
-//			(char*)"N14", (char*)"O16", (char*)"Ar40", NULL);
-//	air.plotMacroscopicCrossSections(1E-5, 2E6, 5000,
-//			(char*)"N14", (char*)"O16", (char*)"Ar40", NULL);
 
 	detector_gas.setMaterialName("detector gas");
 	detector_gas.addIsotope(&He3, rho_He3_detector_gas);
 	detector_gas.rescaleCrossSections(1E-5, 2E6, 50000);
-//	detector_gas.plotMicroscopicCrossSections(1E-5, 2E6, 50000,
-//											(char*)"He3", NULL);
-//	detector_gas.plotMacroscopicCrossSections(1E-5, 2E6, 50000,
-//											(char*)"He3", NULL);
 
 	tnt.setMaterialName("tnt");
 	tnt.addIsotope(&H1, rho_H1_tnt);
@@ -393,12 +372,134 @@ int main(int argc, const char **argv) {
 	tnt.addIsotope(&N14, rho_N14_tnt);
 	tnt.addIsotope(&O16, rho_O16_tnt);
 	tnt.rescaleCrossSections(1E-5, 2E6, 50000);
-//	tnt.plotMicroscopicCrossSections(1E-5, 2E6, 5000,
-//						(char*)"H1", (char*)"C12", (char*)"N14",
-//						(char*)"O16", NULL);
-//	tnt.plotMacroscopicCrossSections(1E-5, 2E6, 5000,
-//						(char*)"H1", (char*)"C12", (char*)"N14",
-//						(char*)"O16", NULL);
+
+
+	/* Setup Surfaces and Regions */
+	XPlane* x_left = new XPlane();
+	XPlane* x_right = new XPlane;
+	YPlane* y_left = new YPlane();
+	YPlane* y_right = new YPlane;
+	ZPlane* z_left = new ZPlane();
+	ZPlane* z_right = new ZPlane;
+
+	XCircle* x_circle_left = new XCircle();
+	XCircle* x_circle_right = new XCircle();
+	YCircle* y_circle_left = new YCircle();
+	YCircle* y_circle_right = new YCircle();
+	ZCircle* z_circle_left = new ZCircle();
+	ZCircle* z_circle_right = new ZCircle();
+
+	Sphere* sphere = new Sphere();
+
+	OpenXCylinder* x_cylinder = new OpenXCylinder();
+	OpenYCylinder* y_cylinder = new OpenYCylinder();
+	OpenZCylinder* z_cylinder = new OpenZCylinder();
+
+	x_left->setX(0.0);
+	x_right->setX(5.0);
+	y_left->setY(0.0);
+	y_right->setY(5.0);
+	z_left->setZ(0.0);
+	z_right->setZ(5.0);
+
+	x_left->setBoundaryType(VACUUM);
+	x_right->setBoundaryType(VACUUM);
+	y_left->setBoundaryType(VACUUM);
+	y_right->setBoundaryType(VACUUM);
+	z_left->setBoundaryType(VACUUM);
+	z_right->setBoundaryType(VACUUM);
+
+	x_circle_left->setX0(0.0);
+	x_circle_left->setY0(0.0);
+	x_circle_left->setZ0(0.0);
+	x_circle_left->setRadius(2.5);
+
+	x_circle_right->setX0(0.0);
+	x_circle_right->setY0(0.0);
+	x_circle_right->setZ0(0.0);
+	x_circle_right->setRadius(2.5);
+
+	y_circle_left->setX0(0.0);
+	y_circle_left->setY0(0.0);
+	y_circle_left->setZ0(0.0);
+	y_circle_left->setRadius(2.5);
+
+	y_circle_right->setX0(0.0);
+	y_circle_right->setY0(0.0);
+	y_circle_right->setZ0(0.0);
+	y_circle_right->setRadius(2.5);
+
+	z_circle_left->setX0(0.0);
+	z_circle_left->setY0(0.0);
+	z_circle_left->setZ0(0.0);
+	z_circle_left->setRadius(2.5);
+
+	z_circle_right->setX0(0.0);
+	z_circle_right->setY0(0.0);
+	z_circle_right->setZ0(0.0);
+	z_circle_right->setRadius(2.5);
+
+	x_circle_left->setBoundaryType(VACUUM);
+	x_circle_right->setBoundaryType(VACUUM);
+	y_circle_left->setBoundaryType(VACUUM);
+	y_circle_right->setBoundaryType(VACUUM);
+	z_circle_left->setBoundaryType(VACUUM);
+	z_circle_right->setBoundaryType(VACUUM);
+
+	sphere->setBoundaryType(VACUUM);
+	sphere->setX0(2.0);
+	sphere->setY0(2.0);
+	sphere->setZ0(0.0);
+	sphere->setRadius(1.5);
+
+	x_cylinder->setBoundaryType(VACUUM);
+	x_cylinder->setX0(0.0);
+	x_cylinder->setY0(2.0);
+	x_cylinder->setZ0(2.0);
+	x_cylinder->setRadius(1.5);
+	x_cylinder->setXLeft(0.0);
+	x_cylinder->setXLeft(5.0);
+
+	y_cylinder->setBoundaryType(VACUUM);
+	y_cylinder->setX0(0.0);
+	y_cylinder->setY0(2.0);
+	y_cylinder->setZ0(2.0);
+	y_cylinder->setRadius(1.5);
+	y_cylinder->setYLeft(0.0);
+	y_cylinder->setYLeft(5.0);
+
+	z_cylinder->setBoundaryType(VACUUM);
+	z_cylinder->setX0(0.0);
+	z_cylinder->setY0(2.0);
+	z_cylinder->setZ0(2.0);
+	z_cylinder->setRadius(1.5);
+	z_cylinder->setZLeft(0.0);
+	z_cylinder->setZLeft(5.0);
+
+
+	/* First test region */
+	Parallelepiped test;
+	test.setRegionName((char*)"test cube");
+	test.setXLeftSurface(x_left);
+	test.setXLeftSurface(x_right);
+	test.setYLeftSurface(y_left);
+	test.setYRightSurface(y_right);
+	test.setZLeftSurface(z_left);
+	test.setZRightSurface(z_right);
+	test.setMaterial(&air);
+
+	x_left->setRightRegion(&test);
+	x_right->setLeftRegion(&test);
+	y_left->setRightRegion(&test);
+	y_right->setLeftRegion(&test);
+	z_left->setRightRegion(&test);
+	z_right->setLeftRegion(&test);
+
+	/* Load cube with */
+	for (int i=0; i < 1000; i++) {
+		neutron* new_neutron = initializeNewNeutron();
+	}
+
 
 	timer.printSplits();
 
