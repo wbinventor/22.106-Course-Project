@@ -568,16 +568,29 @@ void Region::moveNeutrons() {
  ****************************  Parallelepiped  ********************************
  *****************************************************************************/
 
-Parallelepiped::Parallelepiped() { };
+Parallelepiped::Parallelepiped() {
+	_x_left_surface = NULL;
+	_x_right_surface = NULL;
+	_y_left_surface = NULL;
+	_y_right_surface = NULL;
+	_z_left_surface = NULL;
+	_z_right_surface = NULL;
+};
 
 
 Parallelepiped::~Parallelepiped() {
-	delete _x_left_surface;
-	delete _x_right_surface;
-	delete _y_left_surface;
-	delete _y_right_surface;
-	delete _z_left_surface;
-	delete _z_right_surface;
+	if (_x_left_surface != NULL)
+		delete _x_left_surface;
+	if (_x_right_surface != NULL)
+		delete _x_right_surface;
+	if (_y_left_surface != NULL)
+		delete _y_left_surface;
+	if (_y_right_surface != NULL)
+		delete _y_right_surface;
+	if (_z_left_surface != NULL)
+		delete _z_left_surface;
+	if (_z_right_surface != NULL)
+		delete _z_right_surface;
 };
 
 void Parallelepiped::setXLeftSurface(XPlane* plane) {
@@ -641,13 +654,20 @@ bool Parallelepiped::onBoundary(neutron* neutron) {
  *******************************  XCylinder  **********************************
  *****************************************************************************/
 
-XCylinder::XCylinder() { };
+XCylinder::XCylinder() {
+	_left_circle = NULL;
+	_right_circle = NULL;
+	_cylinder = NULL;
+};
 
 
 XCylinder::~XCylinder() {
-	delete _left_circle;
-	delete _right_circle;
-	delete _cylinder;
+	if (_left_circle != NULL)
+		delete _left_circle;
+	if (_right_circle != NULL)
+		delete _right_circle;
+	if (_cylinder != NULL)
+		delete _cylinder;
 };
 
 void XCylinder::setXLeftCircle(XCircle* circle) {
@@ -699,13 +719,20 @@ bool XCylinder::onBoundary(neutron* neutron) {
  *******************************  YCylinder  **********************************
  *****************************************************************************/
 
-YCylinder::YCylinder() { };
+YCylinder::YCylinder() {
+	_left_circle = NULL;
+	_right_circle = NULL;
+	_cylinder = NULL;
+};
 
 
 YCylinder::~YCylinder() {
-	delete _left_circle;
-	delete _right_circle;
-	delete _cylinder;
+	if (_left_circle != NULL)
+		delete _left_circle;
+	if (_right_circle != NULL)
+		delete _right_circle;
+	if (_cylinder != NULL)
+		delete _cylinder;
 };
 
 void YCylinder::setYLeftCircle(YCircle* circle) {
@@ -757,13 +784,20 @@ bool YCylinder::onBoundary(neutron* neutron) {
  *******************************  ZCylinder  **********************************
  *****************************************************************************/
 
-ZCylinder::ZCylinder() { };
+ZCylinder::ZCylinder() {
+	_left_circle = NULL;
+	_right_circle = NULL;
+	_cylinder = NULL;
+};
 
 
 ZCylinder::~ZCylinder() {
-	delete _left_circle;
-	delete _right_circle;
-	delete _cylinder;
+	if (_left_circle != NULL)
+		delete _left_circle;
+	if (_right_circle != NULL)
+		delete _right_circle;
+	if (_cylinder != NULL)
+		delete _cylinder;
 };
 
 void ZCylinder::setZLeftCircle(ZCircle* circle) {
@@ -817,10 +851,13 @@ bool ZCylinder::onBoundary(neutron* neutron) {
  ********************************  Spheroid  **********************************
  *****************************************************************************/
 
-Spheroid::Spheroid() { };
+Spheroid::Spheroid() {
+	_sphere = NULL;
+};
 
 Spheroid::~Spheroid() {
-	delete _sphere;
+	if (_sphere != NULL)
+		delete _sphere;
 };
 
 void Spheroid::setSphere(Sphere* sphere) {
@@ -858,12 +895,17 @@ bool Spheroid::onBoundary(neutron* neutron) {
  ****************************  Spherical Shell  *******************************
  *****************************************************************************/
 
-SphericalShell::SphericalShell() { };
+SphericalShell::SphericalShell() {
+	_inner = NULL;
+	_outer = NULL;
+};
 
 
 SphericalShell::~SphericalShell() {
-	delete _inner;
-	delete _outer;
+	if (_inner != NULL)
+		delete _inner;
+	if (_outer != NULL)
+		delete _outer;
 }
 
 
