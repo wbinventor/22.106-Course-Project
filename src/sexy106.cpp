@@ -23,8 +23,7 @@
 #include "Region.h"
 
 
-//TODO: BatchBinSet with s1 and s2 counters working appropriately
-//TODO: Air material
+//TODO: Adjust materials
 //TODO: Test different region types
 //TODO: Create neutron source
 //TODO: Tie different types of regions together
@@ -37,37 +36,26 @@ int main(int argc, const char **argv) {
 
 	double N_A = 6.023E23;		/* Avogadro's number */
 
+	/* Dry air density at 20 C and 1 atm */
+	float rho_air = 1.2041E-3;
+	float rho_N14_air = rho_air * 0.781 * N_A / 14.0;
+	float rho_O16_air = rho_air * 0.21 * N_A / 16.0;
+	float rho_Ar40_air = rho_air * 0.09 * N_A / 40.0;
 
-	/* Material densities  from paper by Elsheikh, Habbani, ElAgib,
-	 * 2011 (g/cm^3) with natural isotope fractions taken from Wikipedia */
+	/* He3 detector material densities from Baysoy and Subasi */
+	float rho_detector_gas = 7.3E-4;
+	float rho_He3_detector_gas = rho_detector_gas * 1.0 * N_A / 3.0;
+
+	/* TNT density from Esheikh, Habbani, ElAgib */
 	float rho_tnt = 1.8;
-	float rho_polyethylene = 0.955;
-	float rho_borated_polyethylene = 0.95;
-	float rho_soil;
-
-	/* He3 detector material */
-
-	float rho_B10_borated_polyethylene = rho_borated_polyethylene *
-											0.05 * 0.199 * N_A / 10.0;
-	float rho_B11_borated_polyethylene = rho_borated_polyethylene *
-											0.05 * 0.801 * N_A / 11.0;
-
 	float rho_H1_tnt = rho_tnt * 0.022 * N_A / 1.0;
-	float rho_H1_polyethylene = rho_polyethylene * 0.116 * N_A / 1.0;
-	float rho_H1_borated_polyethylene = rho_borated_polyethylene * 0.143 *
-																N_A / 1.0;
-
 	float rho_C12_tnt = rho_tnt * 0.370 * N_A / 12.0;
-	float rho_C12_polyethylene = rho_polyethylene * 0.857 * N_A / 12.0;
-	float rho_C12_borated_polyethylene = rho_borated_polyethylene * 0.612
-															* N_A / 12.0;
-
 	float rho_N14_tnt = rho_tnt * 0.185 * N_A / 14.0;
-
 	float rho_O16_tnt = rho_tnt * 0.423 * N_A / 16.0;
-	float rho_O16_borated_polyethylene = rho_borated_polyethylene
-													* 0.222 * N_A / 16.0;
 
+	/* Soil isotopic from paper by Elsheikh, Habbani, ElAgib,
+	 * 2011 (g/cm^3) with natural isotope fractions taken from Wikipedia */
+	float rho_soil;
 	float rho_H1_soil, rho_O16_soil, rho_Si28_soil, rho_Si29_soil;
 	float rho_Si30_soil, rho_Al27_soil, rho_Fe54_soil, rho_Fe56_soil;
 	float rho_Fe57_soil, rho_Fe58_soil, rho_Ca40_soil, rho_Ca42_soil;
@@ -165,12 +153,10 @@ int main(int argc, const char **argv) {
 
 
 	/* Declare and initialize all isotopes in problem */
-	Isotope Al27, B10, B11, C12, Ca40, Ca42, Ca44, Fe54, Fe56, Fe57, Fe58;
-	Isotope H1, K39, K41, Mg24, Mg25, Mg26, N14, Na23, O16, Si28, Si29, Si30;
-	Material soil, tnt, polyethylene, borated_polyethylene;
-	ZCylinder mine, mine_casing, dirt, air, detector;
-
-	/* FIXME: Must include air!!! */
+	Isotope Al27, Ar40, B10, B11, C12, Ca40, Ca42, Ca44, Fe54, Fe56, Fe57, Fe58;
+	Isotope H1, He3, K39, K41, Mg24, Mg25, Mg26, N14, Na23, O16, Si28, Si29, Si30;
+	Material soil, air, detector_gas, tnt;
+	ZCylinder mine, atmosphere, dirt, detector;
 
 
 	/* Aluminum 27 */
@@ -179,6 +165,13 @@ int main(int argc, const char **argv) {
 	Al27.loadXS("pendf/Al27-capture.txt", CAPTURE, "\t");
 	Al27.loadXS("pendf/Al27-elastic.txt", ELASTIC, "\t");
 	Al27.setElasticAngleType(ISOTROPIC_CM);
+
+	/* Argon 40 */
+	Ar40.setA(40);
+	Ar40.setIsotopeType("Ar40");
+	Ar40.loadXS("pendf/Ar40-capture.txt", CAPTURE, "\t");
+	Ar40.loadXS("pendf/Ar40-elastic.txt", ELASTIC, "\t");
+	Ar40.setElasticAngleType(ISOTROPIC_CM);
 
 	/* Boron 10 */
 	B10.setA(10);
@@ -256,6 +249,13 @@ int main(int argc, const char **argv) {
 	H1.loadXS("pendf/H1-capture.txt", CAPTURE, "\t");
 	H1.loadXS("pendf/H1-elastic.txt", ELASTIC, "\t");
 	H1.setElasticAngleType(ISOTROPIC_CM);
+
+	/* Helium 3 */
+	He3.setA(3);
+	He3.setIsotopeType("He3");
+	He3.loadXS("pendf/He3-capture.txt", CAPTURE, "\t");
+	He3.loadXS("pendf/He3-elastic.txt", ELASTIC, "\t");
+	He3.setElasticAngleType(ISOTROPIC_CM);
 
 	/* Potassium 39 */
 	K39.setA(39);
@@ -369,6 +369,24 @@ int main(int argc, const char **argv) {
 			(char*)"K39", (char*)"K41", (char*)"Na23", (char*)"Mg24",
 			(char*)"Mg25", (char*)"Mg26", NULL);
 
+	air.setMaterialName("air");
+	air.addIsotope(&N14, rho_N14_air);
+	air.addIsotope(&O16, rho_O16_air);
+	air.addIsotope(&Ar40, rho_Ar40_air);
+	air.rescaleCrossSections(1E-5, 2E6, 50000);
+	air.plotMicroscopicCrossSections(1E-5, 2E6, 5000,
+			(char*)"N14", (char*)"O16", (char*)"Ar40", NULL);
+	air.plotMacroscopicCrossSections(1E-5, 2E6, 5000,
+			(char*)"N14", (char*)"O16", (char*)"Ar40", NULL);
+
+	detector_gas.setMaterialName("detector gas");
+	detector_gas.addIsotope(&He3, rho_He3_detector_gas);
+	detector_gas.rescaleCrossSections(1E-5, 2E6, 50000);
+	detector_gas.plotMicroscopicCrossSections(1E-5, 2E6, 50000,
+											(char*)"He3", NULL);
+	detector_gas.plotMacroscopicCrossSections(1E-5, 2E6, 50000,
+											(char*)"He3", NULL);
+
 	tnt.setMaterialName("tnt");
 	tnt.addIsotope(&H1, rho_H1_tnt);
 	tnt.addIsotope(&C12, rho_C12_tnt);
@@ -381,29 +399,6 @@ int main(int argc, const char **argv) {
 	tnt.plotMacroscopicCrossSections(1E-5, 2E6, 5000,
 						(char*)"H1", (char*)"C12", (char*)"N14",
 						(char*)"O16", NULL);
-
-	polyethylene.setMaterialName("polyethylene");
-	polyethylene.addIsotope(&H1, rho_H1_polyethylene);
-	polyethylene.addIsotope(&C12, rho_C12_polyethylene);
-	polyethylene.rescaleCrossSections(1E-5, 2E6, 50000);
-	polyethylene.plotMicroscopicCrossSections(1E-5, 2E6, 5000,
-							(char*)"H1", (char*)"C12", NULL);
-	polyethylene.plotMacroscopicCrossSections(1E-5, 2E6, 5000,
-							(char*)"H1", (char*)"C12", NULL);
-
-	borated_polyethylene.setMaterialName("borated polyethylene");
-	borated_polyethylene.addIsotope(&H1, rho_H1_borated_polyethylene);
-	borated_polyethylene.addIsotope(&B10, rho_B10_borated_polyethylene);
-	borated_polyethylene.addIsotope(&B11, rho_B11_borated_polyethylene);
-	borated_polyethylene.addIsotope(&C12, rho_C12_borated_polyethylene);
-	borated_polyethylene.addIsotope(&O16, rho_O16_borated_polyethylene);
-	borated_polyethylene.rescaleCrossSections(1E-5, 2E7, 50000);
-	borated_polyethylene.plotMicroscopicCrossSections(1E-5, 2E6, 5000,
-				(char*)"H1", (char*)"B10", (char*)"B11", (char*)"C12",
-													(char*)"O16", NULL);
-	borated_polyethylene.plotMacroscopicCrossSections(1E-5, 2E6, 5000,
-			(char*)"H1", (char*)"B10", (char*)"B11", (char*)"C12",
-												(char*)"O16", NULL);
 
 	timer.printSplits();
 
