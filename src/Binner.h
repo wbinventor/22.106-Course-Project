@@ -24,12 +24,28 @@
 class Isotope;
 class Material;
 
+
+/* Binner types (subclasses of Binner) */
+typedef enum binnerTypes {
+	FLUX,
+	CAPTURE_RATE,
+	ABSORPTION_RATE,
+	ELASTIC_RATE,
+	INELASTIC_RATE,
+	FISSION_RATE,
+	TRANSPORT_RATE,
+	COLLISION_RATE,
+	DIFFUSION_RATE
+
+} binnerType;
+
+
 /* Bin spacing types */
-typedef enum binTypes {
+typedef enum spacingTypes {
 	LINEAR,
 	LOGARITHMIC,
 	OTHER
-} binType;
+} spacingType;
 
 
 /* Tally type */
@@ -65,16 +81,19 @@ protected:
 	double* _bin_rel_err;
 
 	float _bin_delta;
-	binType _bin_type;
+	binnerType _binner_type;
+	spacingType _spacing_type;
 	tallyDomainType _tally_domain_type;
 	char* _isotopes;
 
 	omp_lock_t _lock;
+
 public:
 	Binner();
 	virtual ~Binner();
 	char* getBinnerName();
-	binType getBinType();
+	binnerType getBinnerType();
+	spacingType getBinType();
 	tallyDomainType getTallyDomainType();
 	int getNumBins();
 	float* getBinEdges();
@@ -95,11 +114,12 @@ public:
 
 	void setBinnerName(char* name);
 	void setNumThreads(int num_threads);
+	void setBinnerType(binnerType type);
 	void setTallyDomainType(tallyDomainType type);
 	void setBinEdges(float* edges, int num_edges);
 	void setIsotopes(char* isotopes);
 
-	void generateBinEdges(float start, float end, int num_bins, binType type);
+	void generateBinEdges(float start, float end, int num_bins, spacingType type);
 	void generateBinCenters();
 
 	void tally(int thread_num, neutron* neutron);
@@ -119,6 +139,7 @@ public:
 	void weightedTally(neutron* neutron, float sigma_t,
 						int energy_index, Material* material, Isotope* isotope);
 };
+
 
 class CaptureRateBinner: public Binner {
 public:

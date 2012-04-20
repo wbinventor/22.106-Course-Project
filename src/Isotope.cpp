@@ -1641,6 +1641,8 @@ void Isotope::plotXS(float start_energy, float end_energy, int num_energies,
 	/* Loop through each isotope */
 	for (i=types; i >= 0; i=va_arg(xs_types, int)) {
 
+		log_printf(NORMAL, "plotting %d xs. type for isotope %s",i, _isotope_name.c_str());
+
 		std::stringstream legend;
 
 		/* Get the appropriate function handle to compute the cross-section

@@ -26,6 +26,8 @@ Region::Region() {
 	_use_forced_collision = false;
 	_weight_low = 0.0;
 	_weight_avg = 0.0;
+
+	_interior_region = NULL;
 }
 
 
@@ -208,11 +210,12 @@ void Region::clearBinners() {
 }
 
 
-float Region::computeMinSurfDist(neutron* neutron, Surface* nearest) {
+Surface* Region::computeMinSurfDist(neutron* neutron, float min_dist) {
 
 	/* Find distance to nearest wall along neutron's trajectory */
-	float min_dist = std::numeric_limits<float>::infinity();
-	float curr_dist;
+	min_dist = std::numeric_limits<float>::infinity();
+	float curr_dist = 0.0;;
+	Surface* nearest = NULL;
 
 	/* Loop over all bordering surfaces */
 	std::vector<Surface*>::iterator iter;
@@ -224,18 +227,19 @@ float Region::computeMinSurfDist(neutron* neutron, Surface* nearest) {
 
 		if (curr_dist < min_dist) {
 			min_dist = curr_dist;
-			nearest = *iter;
+			nearest = (*iter);
 		}
 	}
 
-	return min_dist;
+	return nearest;
 }
 
 
 bool Region::inInteriorRegion(float x, float y, float z) {
 
-	/* Loop over all interior regions to check whether any of them contain this neutron */
-	if (_interior_region->contains(x, y, z))
+	if (_interior_region == NULL)
+		return false;
+	else if (_interior_region->contains(x, y, z))
 		return true;
 	else
 		return false;
@@ -260,7 +264,7 @@ void Region::moveNeutrons() {
 	float new_x, new_y, new_z;
 	neutron* curr;
 	Isotope* isotope;
-	float min_dist;
+	float min_dist = 0.0;
 	Surface* nearest = NULL;
 	collisionType collision_type;
 	std::vector<neutron*>::iterator iter1;
@@ -355,7 +359,7 @@ void Region::moveNeutrons() {
 						"weight = %f", curr->_weight);
 
 				/* Find distance to nearest wall along neutron's trajectory */
-				min_dist = computeMinSurfDist(curr, nearest);
+				nearest = computeMinSurfDist(curr, min_dist);
 
 				/* Compute exponential term in forced collision prob dist */
 				float px = exp(-sigma_t * min_dist);
@@ -549,11 +553,11 @@ void Region::moveNeutrons() {
 
 		/* Check if this neutron is contained by an interior region */
 		if (inInteriorRegion(new_x, new_y, new_z))
-			min_dist = _interior_region->computeMinSurfDist(curr, nearest);
+			nearest = _interior_region->computeMinSurfDist(curr, min_dist);
 
 		/* Find distance to nearest wall along neutron's trajectory */
 		else
-			min_dist = computeMinSurfDist(curr, nearest);
+			nearest = computeMinSurfDist(curr, min_dist);
 
 		updateNeutronTime(curr, min_dist);
 		nearest->addNeutron(curr);
@@ -568,16 +572,29 @@ void Region::moveNeutrons() {
  ****************************  Parallelepiped  ********************************
  *****************************************************************************/
 
-Parallelepiped::Parallelepiped() { };
+Parallelepiped::Parallelepiped() {
+	_x_left_surface = NULL;
+	_x_right_surface = NULL;
+	_y_left_surface = NULL;
+	_y_right_surface = NULL;
+	_z_left_surface = NULL;
+	_z_right_surface = NULL;
+};
 
 
 Parallelepiped::~Parallelepiped() {
-	delete _x_left_surface;
-	delete _x_right_surface;
-	delete _y_left_surface;
-	delete _y_right_surface;
-	delete _z_left_surface;
-	delete _z_right_surface;
+	if (_x_left_surface != NULL)
+		delete _x_left_surface;
+	if (_x_right_surface != NULL)
+		delete _x_right_surface;
+	if (_y_left_surface != NULL)
+		delete _y_left_surface;
+	if (_y_right_surface != NULL)
+		delete _y_right_surface;
+	if (_z_left_surface != NULL)
+		delete _z_left_surface;
+	if (_z_right_surface != NULL)
+		delete _z_right_surface;
 };
 
 void Parallelepiped::setXLeftSurface(XPlane* plane) {
@@ -641,13 +658,20 @@ bool Parallelepiped::onBoundary(neutron* neutron) {
  *******************************  XCylinder  **********************************
  *****************************************************************************/
 
-XCylinder::XCylinder() { };
+XCylinder::XCylinder() {
+	_left_circle = NULL;
+	_right_circle = NULL;
+	_cylinder = NULL;
+};
 
 
 XCylinder::~XCylinder() {
-	delete _left_circle;
-	delete _right_circle;
-	delete _cylinder;
+	if (_left_circle != NULL)
+		delete _left_circle;
+	if (_right_circle != NULL)
+		delete _right_circle;
+	if (_cylinder != NULL)
+		delete _cylinder;
 };
 
 void XCylinder::setXLeftCircle(XCircle* circle) {
@@ -699,13 +723,20 @@ bool XCylinder::onBoundary(neutron* neutron) {
  *******************************  YCylinder  **********************************
  *****************************************************************************/
 
-YCylinder::YCylinder() { };
+YCylinder::YCylinder() {
+	_left_circle = NULL;
+	_right_circle = NULL;
+	_cylinder = NULL;
+};
 
 
 YCylinder::~YCylinder() {
-	delete _left_circle;
-	delete _right_circle;
-	delete _cylinder;
+	if (_left_circle != NULL)
+		delete _left_circle;
+	if (_right_circle != NULL)
+		delete _right_circle;
+	if (_cylinder != NULL)
+		delete _cylinder;
 };
 
 void YCylinder::setYLeftCircle(YCircle* circle) {
@@ -757,13 +788,20 @@ bool YCylinder::onBoundary(neutron* neutron) {
  *******************************  ZCylinder  **********************************
  *****************************************************************************/
 
-ZCylinder::ZCylinder() { };
+ZCylinder::ZCylinder() {
+	_left_circle = NULL;
+	_right_circle = NULL;
+	_cylinder = NULL;
+};
 
 
 ZCylinder::~ZCylinder() {
-	delete _left_circle;
-	delete _right_circle;
-	delete _cylinder;
+	if (_left_circle != NULL)
+		delete _left_circle;
+	if (_right_circle != NULL)
+		delete _right_circle;
+	if (_cylinder != NULL)
+		delete _cylinder;
 };
 
 void ZCylinder::setZLeftCircle(ZCircle* circle) {
@@ -817,10 +855,13 @@ bool ZCylinder::onBoundary(neutron* neutron) {
  ********************************  Spheroid  **********************************
  *****************************************************************************/
 
-Spheroid::Spheroid() { };
+Spheroid::Spheroid() {
+	_sphere = NULL;
+};
 
 Spheroid::~Spheroid() {
-	delete _sphere;
+	if (_sphere != NULL)
+		delete _sphere;
 };
 
 void Spheroid::setSphere(Sphere* sphere) {
@@ -858,12 +899,17 @@ bool Spheroid::onBoundary(neutron* neutron) {
  ****************************  Spherical Shell  *******************************
  *****************************************************************************/
 
-SphericalShell::SphericalShell() { };
+SphericalShell::SphericalShell() {
+	_inner = NULL;
+	_outer = NULL;
+};
 
 
 SphericalShell::~SphericalShell() {
-	delete _inner;
-	delete _outer;
+	if (_inner != NULL)
+		delete _inner;
+	if (_outer != NULL)
+		delete _outer;
 }
 
 

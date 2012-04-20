@@ -1,0 +1,29 @@
+Project Name: sexy106
+
+Updating a GCC Configuration to Use Intel(R) C++ Compiler Debug (id = cdt.managedbuild.config.gnu.exe.debug.1422452349)
+  Processing project-level settings:
+    copying tool info: GCC Archiver
+    mapping tool info: GCC C++ Compiler -> Intel Intel(R) 64 C++ Compiler  (v12.1.0)
+    mapping tool info: GCC C Compiler -> Intel Intel(R) 64 C Compiler (v12.1.0)
+    mapping tool info: GCC C Linker -> Intel Intel(R) 64 C Linker (v12.1.0)
+    mapping tool info: GCC C++ Linker -> Intel Intel(R) 64 C++ Linker (v12.1.0)
+      copied -l rt -l gomp 
+    copying tool info: GCC Assembler
+
+  => New Configuration Name: Debug_i (id = intel.linux.x86_64.exe.dbg.82340214_12.1.0)
+
+Updating a GCC Configuration to Use Intel(R) C++ Compiler Release (id = cdt.managedbuild.config.gnu.exe.release.1977293164)
+  Processing project-level settings:
+    copying tool info: GCC Archiver
+    mapping tool info: GCC C++ Compiler -> Intel Intel(R) 64 C++ Compiler  (v12.1.0)
+      warning: mapped option: -g3 -> -g
+    mapping tool info: GCC C Compiler -> Intel Intel(R) 64 C Compiler (v12.1.0)
+    mapping tool info: GCC C Linker -> Intel Intel(R) 64 C Linker (v12.1.0)
+    mapping tool info: GCC C++ Linker -> Intel Intel(R) 64 C++ Linker (v12.1.0)
+      copied -l rt -l gomp 
+    copying tool info: GCC Assembler
+
+  => New Configuration Name: Release_i (id = intel.linux.x86_64.exe.rel.942051213_12.1.0)
+
+
+.cproject file was backed up to .cproject_2012_04_20_15_06_33
