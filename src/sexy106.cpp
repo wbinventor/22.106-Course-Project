@@ -481,12 +481,13 @@ int main(int argc, const char **argv) {
 	Parallelepiped test;
 	test.setRegionName((char*)"test cube");
 	test.setXLeftSurface(x_left);
-	test.setXLeftSurface(x_right);
+	test.setXRightSurface(x_right);
 	test.setYLeftSurface(y_left);
 	test.setYRightSurface(y_right);
 	test.setZLeftSurface(z_left);
 	test.setZRightSurface(z_right);
-	test.setMaterial(&air);
+	test.setMaterial(&soil);
+//	test.setMaterial(&air);
 
 	x_left->setRightRegion(&test);
 	x_right->setLeftRegion(&test);
@@ -498,7 +499,27 @@ int main(int argc, const char **argv) {
 	/* Load cube with */
 	for (int i=0; i < 1000; i++) {
 		neutron* new_neutron = initializeNewNeutron();
+		new_neutron->_energy = 1E6;
+		new_neutron->_mu = -1.0;
+		new_neutron->_phi = 0.0;
+		new_neutron->_thread_num = 1;
+		new_neutron->_time = 0.0;
+		new_neutron->_weight = 1.0;
+		new_neutron->_x = 2.5;
+		new_neutron->_y = 2.5;
+		new_neutron->_z = 2.5;
+
+		test.addNeutron(new_neutron);
 	}
+
+	int num_alive = 1000;
+	while (num_alive != 0) {
+		log_printf(NORMAL, "num alive = %d", num_alive);
+		test.moveNeutrons();
+		num_alive = test.getNumNeutrons();
+
+	}
+
 
 
 	timer.printSplits();
