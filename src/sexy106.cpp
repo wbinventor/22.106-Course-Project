@@ -12,7 +12,7 @@
 #include <string.h>
 #include <sstream>
 #include <math.h>
-//#include <omp.h>
+#include <omp.h>
 #include "log.h"
 #include "gnuplot.h"
 #include "Timer.h"
