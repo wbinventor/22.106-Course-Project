@@ -1046,7 +1046,7 @@ bool Sphere::onSurface(neutron* neutron) {
 						(neutron->_y - _y0) * (neutron->_y - _y0) +
 						(neutron->_z - _z0) * (neutron->_z - _z0);
 
-	if (fabs(r_squared - _r_squared) < 1E-6)
+	if (fabs(r_squared - _r_squared) < 1E-4)
 		return true;
 	else
 		return false;
@@ -1216,7 +1216,7 @@ float OpenXCylinder::computeDistance(neutron* neutron) {
 
 	float a = vy*vy + vz*vz;
 	float b = 2*y*vy + 2*z*vz;
-	float c = y*y + z*z -1;
+	float c = y*y + z*z -_r_squared;
 
 	float discr = b*b - 4.0*a*c;
 
@@ -1243,8 +1243,8 @@ float OpenXCylinder::computeDistance(neutron* neutron) {
 	else {
 		float t1 = (-b + sqrt(discr)) / (2.0*a);
 		float t2 = (-b - sqrt(discr)) / (2.0*a);
-		float new_x1 = y + vx*t1;
-		float new_x2 = y + vx*t2;
+		float new_x1 = x + vx*t1;
+		float new_x2 = x + vx*t2;
 		float new_y, new_z;
 		float test_dist1 = std::numeric_limits<float>::infinity();
 		float test_dist2 = std::numeric_limits<float>::infinity();
@@ -1282,7 +1282,7 @@ bool OpenXCylinder::onSurface(neutron* neutron) {
 	float r_squared = (neutron->_y - _y0) * (neutron->_y - _y0) +
 						(neutron->_z - _z0) * (neutron->_z - _z0);
 
-	if (r_squared <= _r_squared)
+	if (fabs(r_squared - _r_squared) < 1E-4)
 		return true;
 	else
 		return false;
@@ -1395,7 +1395,7 @@ float OpenYCylinder::computeDistance(neutron* neutron) {
 
 	float a = vx*vx + vz*vz;
 	float b = 2*x*vx + 2*z*vz;
-	float c = x*x + z*z -1;
+	float c = x*x + z*z -_r_squared;
 
 	float discr = b*b - 4.0*a*c;
 
@@ -1461,7 +1461,7 @@ bool OpenYCylinder::onSurface(neutron* neutron) {
 	float r_squared = (neutron->_x - _x0) * (neutron->_x - _x0) +
 						(neutron->_z - _z0) * (neutron->_z - _z0);
 
-	if (r_squared <= _r_squared)
+	if (fabs(r_squared - _r_squared) < 1E-4)
 		return true;
 	else
 		return false;
@@ -1574,7 +1574,7 @@ float OpenZCylinder::computeDistance(neutron* neutron) {
 
 	float a = vx*vx + vy*vy;
 	float b = 2*x*vx + 2*y*vy;
-	float c = x*x + y*y -1;
+	float c = x*x + y*y -_r_squared;
 
 	float discr = b*b - 4.0*a*c;
 
@@ -1640,7 +1640,7 @@ bool OpenZCylinder::onSurface(neutron* neutron) {
 	float r_squared = (neutron->_x - _x0) * (neutron->_x - _x0) +
 						(neutron->_y - _y0) * (neutron->_y - _y0);
 
-	if (r_squared <= _r_squared)
+	if (fabs(r_squared - _r_squared) < 1E-4)
 		return true;
 	else
 		return false;

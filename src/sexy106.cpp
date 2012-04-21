@@ -23,7 +23,7 @@
 #include "Region.h"
 
 
-//TODO: Test different region types
+//TODO: cube different region types
 //TODO: Create neutron source
 //TODO: Tie different types of regions together
 
@@ -419,7 +419,7 @@ int main(int argc, const char **argv) {
 	x_circle_left->setZ0(0.0);
 	x_circle_left->setRadius(2.5);
 
-	x_circle_right->setX0(0.0);
+	x_circle_right->setX0(5.0);
 	x_circle_right->setY0(0.0);
 	x_circle_right->setZ0(0.0);
 	x_circle_right->setRadius(2.5);
@@ -430,7 +430,7 @@ int main(int argc, const char **argv) {
 	y_circle_left->setRadius(2.5);
 
 	y_circle_right->setX0(0.0);
-	y_circle_right->setY0(0.0);
+	y_circle_right->setY0(5.0);
 	y_circle_right->setZ0(0.0);
 	y_circle_right->setRadius(2.5);
 
@@ -441,7 +441,7 @@ int main(int argc, const char **argv) {
 
 	z_circle_right->setX0(0.0);
 	z_circle_right->setY0(0.0);
-	z_circle_right->setZ0(0.0);
+	z_circle_right->setZ0(5.0);
 	z_circle_right->setRadius(2.5);
 
 	x_circle_left->setBoundaryType(VACUUM);
@@ -459,51 +459,93 @@ int main(int argc, const char **argv) {
 
 	x_cylinder->setBoundaryType(VACUUM);
 	x_cylinder->setX0(0.0);
-	x_cylinder->setY0(2.0);
-	x_cylinder->setZ0(2.0);
-	x_cylinder->setRadius(1.5);
+	x_cylinder->setY0(0.0);
+	x_cylinder->setZ0(0.0);
+	x_cylinder->setRadius(2.5);
 	x_cylinder->setXLeft(0.0);
-	x_cylinder->setXLeft(5.0);
+	x_cylinder->setXRight(5.0);
 
 	y_cylinder->setBoundaryType(VACUUM);
 	y_cylinder->setX0(0.0);
-	y_cylinder->setY0(2.0);
-	y_cylinder->setZ0(2.0);
-	y_cylinder->setRadius(1.5);
+	y_cylinder->setY0(0.0);
+	y_cylinder->setZ0(0.0);
+	y_cylinder->setRadius(2.5);
 	y_cylinder->setYLeft(0.0);
-	y_cylinder->setYLeft(5.0);
+	y_cylinder->setYRight(5.0);
 
 	z_cylinder->setBoundaryType(VACUUM);
 	z_cylinder->setX0(0.0);
-	z_cylinder->setY0(2.0);
-	z_cylinder->setZ0(2.0);
-	z_cylinder->setRadius(1.5);
+	z_cylinder->setY0(0.0);
+	z_cylinder->setZ0(0.0);
+	z_cylinder->setRadius(2.5);
 	z_cylinder->setZLeft(0.0);
-	z_cylinder->setZLeft(5.0);
+	z_cylinder->setZRight(5.0);
 
 
-	/* First test region */
-	Parallelepiped test;
-	test.setRegionName((char*)"test cube");
-	test.setXLeftSurface(x_left);
-	test.setXRightSurface(x_right);
-	test.setYLeftSurface(y_left);
-	test.setYRightSurface(y_right);
-	test.setZLeftSurface(z_left);
-	test.setZRightSurface(z_right);
-//	test.setMaterial(&soil);
-//	test.setMaterial(&air);
-//	test.setMaterial(&detector_gas);
-	test.setMaterial(&tnt);
+	/* Parallelepiped test region */
+	Parallelepiped cube;
+	cube.setRegionName((char*)"cube cube");
+	cube.setXLeftSurface(x_left);
+	cube.setXRightSurface(x_right);
+	cube.setYLeftSurface(y_left);
+	cube.setYRightSurface(y_right);
+	cube.setZLeftSurface(z_left);
+	cube.setZRightSurface(z_right);
+	cube.setMaterial(&soil);
+//	cube.setMaterial(&air);
+//	cube.setMaterial(&detector_gas);
+//	cube.setMaterial(&tnt);
 
-	x_left->setRightRegion(&test);
-	x_right->setLeftRegion(&test);
-	y_left->setRightRegion(&test);
-	y_right->setLeftRegion(&test);
-	z_left->setRightRegion(&test);
-	z_right->setLeftRegion(&test);
+	x_left->setRightRegion(&cube);
+	x_right->setLeftRegion(&cube);
+	y_left->setRightRegion(&cube);
+	y_right->setLeftRegion(&cube);
+	z_left->setRightRegion(&cube);
+	z_right->setLeftRegion(&cube);
 
-	/* Load cube with */
+	/* XCylinder test region */
+	XCylinder xcylinder;
+	xcylinder.setRegionName((char*)"x cylinder");
+	xcylinder.setOpenXCylinder(x_cylinder);
+	xcylinder.setXLeftCircle(x_circle_left);
+	xcylinder.setXRightCircle(x_circle_right);
+	xcylinder.setMaterial(&soil);
+//	xcylinder.setMaterial(&air);
+//	xcylinder.setMaterial(&detector_gas);
+//	xcylinder.setMaterial(&tnt);
+
+	x_circle_left->setLeftRegion(&xcylinder);
+	x_circle_right->setRightRegion(&xcylinder);
+
+	/* YCylinder test region */
+	YCylinder ycylinder;
+	ycylinder.setRegionName((char*)"y cylinder");
+	ycylinder.setOpenYCylinder(y_cylinder);
+	ycylinder.setYLeftCircle(y_circle_left);
+	ycylinder.setYRightCircle(y_circle_right);
+	ycylinder.setMaterial(&soil);
+//	ycylinder.setMaterial(&air);
+//	ycylinder.setMaterial(&detector_gas);
+//	ycylinder.setMaterial(&tnt);
+
+	y_circle_left->setLeftRegion(&ycylinder);
+	y_circle_right->setRightRegion(&ycylinder);
+
+	/* ZCylinder test region */
+	ZCylinder zcylinder;
+	zcylinder.setRegionName((char*)"z cylinder");
+	zcylinder.setOpenZCylinder(z_cylinder);
+	zcylinder.setZLeftCircle(z_circle_left);
+	zcylinder.setZRightCircle(z_circle_right);
+	zcylinder.setMaterial(&soil);
+//	zcylinder.setMaterial(&air);
+//	zcylinder.setMaterial(&detector_gas);
+//	zcylinder.setMaterial(&tnt);
+
+	z_circle_left->setLeftRegion(&zcylinder);
+	z_circle_right->setRightRegion(&zcylinder);
+
+	/* Load cube with neutrons */
 	for (int i=0; i < num_neutrons; i++) {
 		neutron* new_neutron = initializeNewNeutron();
 		new_neutron->_energy = 1E6;
@@ -514,22 +556,103 @@ int main(int argc, const char **argv) {
 		new_neutron->_weight = 1.0;
 		new_neutron->_x = 2.5;
 		new_neutron->_y = 2.5;
-		new_neutron->_z = 2.5;
+		new_neutron->_z = 5.0;
 
-		test.addNeutron(new_neutron);
+		cube.addNeutron(new_neutron);
 	}
 
 	int num_alive = num_neutrons;
+	log_printf(NORMAL, "Testing neutrons inside of a cube");
 	while (num_alive != 0) {
 		log_printf(NORMAL, "num alive = %d", num_alive);
-		test.moveNeutrons();
+		cube.moveNeutrons();
 		x_left->moveNeutrons();
 		x_right->moveNeutrons();
 		y_left->moveNeutrons();
 		y_right->moveNeutrons();
 		z_left->moveNeutrons();
 		z_right->moveNeutrons();
-		num_alive = test.getNumNeutrons();
+		num_alive = cube.getNumNeutrons();
+	}
+
+	/* Load xcylinder with neutrons */
+	for (int i=0; i < num_neutrons; i++) {
+		neutron* new_neutron = initializeNewNeutron();
+		new_neutron->_energy = 1E6;
+		new_neutron->_mu = -1.0;
+		new_neutron->_phi = 0.0;
+		new_neutron->_thread_num = 1;
+		new_neutron->_time = 0.0;
+		new_neutron->_weight = 1.0;
+		new_neutron->_x = 2.5;
+		new_neutron->_y = 0.0;
+		new_neutron->_z = 0.0;
+
+		xcylinder.addNeutron(new_neutron);
+	}
+
+	num_alive = num_neutrons;
+	log_printf(NORMAL, "Testing neutrons inside of an xcylinder");
+	while (num_alive != 0) {
+		log_printf(NORMAL, "num alive = %d", num_alive);
+		xcylinder.moveNeutrons();
+		x_circle_left->moveNeutrons();
+		x_circle_right->moveNeutrons();
+		x_cylinder->moveNeutrons();
+		num_alive = xcylinder.getNumNeutrons();
+	}
+
+	/* Load ycylinder with neutrons */
+	for (int i=0; i < num_neutrons; i++) {
+		neutron* new_neutron = initializeNewNeutron();
+		new_neutron->_energy = 1E6;
+		new_neutron->_mu = -1.0;
+		new_neutron->_phi = 0.0;
+		new_neutron->_thread_num = 1;
+		new_neutron->_time = 0.0;
+		new_neutron->_weight = 1.0;
+		new_neutron->_x = 0.0;
+		new_neutron->_y = 2.5;
+		new_neutron->_z = 0.0;
+
+		ycylinder.addNeutron(new_neutron);
+	}
+
+	num_alive = num_neutrons;
+	log_printf(NORMAL, "Testing neutrons inside of an ycylinder");
+	while (num_alive != 0) {
+		log_printf(NORMAL, "num alive = %d", num_alive);
+		ycylinder.moveNeutrons();
+		y_circle_left->moveNeutrons();
+		y_circle_right->moveNeutrons();
+		y_cylinder->moveNeutrons();
+		num_alive = ycylinder.getNumNeutrons();
+	}
+
+	/* Load zcylinder with neutrons */
+	for (int i=0; i < num_neutrons; i++) {
+		neutron* new_neutron = initializeNewNeutron();
+		new_neutron->_energy = 1E6;
+		new_neutron->_mu = -1.0;
+		new_neutron->_phi = 0.0;
+		new_neutron->_thread_num = 1;
+		new_neutron->_time = 0.0;
+		new_neutron->_weight = 1.0;
+		new_neutron->_x = 0.0;
+		new_neutron->_y = 0.0;
+		new_neutron->_z = 2.5;
+
+		zcylinder.addNeutron(new_neutron);
+	}
+
+	num_alive = num_neutrons;
+	log_printf(NORMAL, "Testing neutrons inside of an zcylinder");
+	while (num_alive != 0) {
+		log_printf(NORMAL, "num alive = %d", num_alive);
+		zcylinder.moveNeutrons();
+		z_circle_left->moveNeutrons();
+		z_circle_right->moveNeutrons();
+		num_alive = zcylinder.getNumNeutrons();
 	}
 
 	timer.printSplits();

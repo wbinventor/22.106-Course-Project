@@ -699,6 +699,7 @@ void XCylinder::setXRightCircle(XCircle* circle) {
 
 void XCylinder::setOpenXCylinder(OpenXCylinder* cylinder) {
 	_cylinder = cylinder;
+	_boundaries.push_back(cylinder);
 }
 
 bool XCylinder::contains(float x, float y, float z) {
@@ -712,6 +713,7 @@ bool XCylinder::contains(float x, float y, float z) {
 
 	if (r > _left_circle->getRadius())
 		return false;
+
 	else if (inInteriorRegion(x, y, z))
 		return false;
 
@@ -764,6 +766,7 @@ void YCylinder::setYRightCircle(YCircle* circle) {
 
 void YCylinder::setOpenYCylinder(OpenYCylinder* cylinder) {
 	_cylinder = cylinder;
+	_boundaries.push_back(cylinder);
 }
 
 bool YCylinder::contains(float x, float y, float z) {
@@ -829,6 +832,7 @@ void ZCylinder::setZRightCircle(ZCircle* circle) {
 
 void ZCylinder::setOpenZCylinder(OpenZCylinder* cylinder) {
 	_cylinder = cylinder;
+	_boundaries.push_back(cylinder);
 }
 
 bool ZCylinder::contains(float x, float y, float z) {
