@@ -275,6 +275,10 @@ void Region::moveNeutrons() {
 	 *************************************************************************/
 	/* Iterate over all neutrons that are inside this Region */
 	for (iter1 = _neutrons.begin(); iter1 != _neutrons.end(); ++iter1) {
+
+		log_printf(DEBUG, "Region %s contains %d neutrons",
+										_region_name, _neutrons.size());
+
 		curr = (*iter1);
 
 		log_printf(DEBUG, "%s", neutronToString(curr).c_str());
@@ -291,7 +295,7 @@ void Region::moveNeutrons() {
 		new_y = curr->_y + path_length * sin(curr->_phi) * sin(theta);
 		new_z = curr->_z + path_length * curr->_mu;
 
-		log_printf(DEBUG, "sigma_t = %f, path_length = %f, new_x = %f, ",
+		log_printf(DEBUG, "sigma_t = %f, path_length = %f, new_x = %f, "
 				"new_y = %f, new_z = %f", sigma_t, path_length,
 											new_x, new_y, new_z);
 
@@ -301,11 +305,11 @@ void Region::moveNeutrons() {
 			/* Figure out which isotope the neutron collided in */
 			isotope = _material->sampleIsotope(energy_index);
 
-			log_printf(DEBUG, "Neutron collided in isotope: %s",
-								isotope->getIsotopeType().c_str());
-
 			/* Figure out the collision type */
 			collision_type = isotope->getCollisionType(energy_index);
+
+			log_printf(DEBUG, "Neutron made %d collision type in isotope: %s",
+							collision_type, isotope->getIsotopeType().c_str());
 
 			/* Update the neutron time */
 			updateNeutronTime(curr, path_length);
@@ -423,6 +427,9 @@ void Region::moveNeutrons() {
 
 				log_printf(DEBUG, "Normal scatter type collision");
 
+				float phi = (float(rand()) / RAND_MAX) * 2.0 * M_PI;
+				curr->_phi = phi;
+
 				/* Isotropic in lab */
 				if (isotope->getScatterAngleType() == ISOTROPIC_LAB) {
 					float A = float(isotope->getA());
@@ -445,7 +452,6 @@ void Region::moveNeutrons() {
 					float mu_cm = (float(rand()) / RAND_MAX) * 2.0 - 1.0;
 					int A = isotope->getA();
 					float mu_l = (1.0 + A*mu_cm) / (sqrt(A*A + 2*A*mu_cm+1.0));
-					float phi = (float(rand()) / RAND_MAX) * 2.0 * M_PI;
 					curr->_mu = curr->_mu * mu_l +
 							sqrt(1.0 - curr->_mu * curr->_mu) *
 							sqrt(1.0 - mu_l * mu_l) * sin(phi);
@@ -458,14 +464,17 @@ void Region::moveNeutrons() {
 															((A+1.0)*(A+1.0));
 				}
 
-				log_printf(DEBUG, "Updated mu= %f, energy = %f",
-										curr->_mu, curr->_energy);
+				log_printf(DEBUG, "Updated mu= %f, phi = %f, energy = %f",
+									curr->_mu, curr->_phi, curr->_energy);
 			}
 
 			/* Check if collision type was inelastic scattering */
 			else if (collision_type == INELASTIC) {
 
 				log_printf(DEBUG, "Inelastic scatter type collision");
+
+				float phi = (float(rand()) / RAND_MAX) * 2.0 * M_PI;
+				curr->_phi = phi;
 
 				/* Isotropic in lab */
 				if (isotope->getInelasticAngleType() == ISOTROPIC_LAB)
@@ -476,7 +485,7 @@ void Region::moveNeutrons() {
 					float mu_cm = (float(rand()) / RAND_MAX) * 2.0 - 1.0;
 					int A = isotope->getA();
 					float mu_l = (1.0 + A*mu_cm) / (sqrt(A*A + 2*A*mu_cm+1.0));
-					float phi = (float(rand()) / RAND_MAX) * 2.0 * M_PI;
+
 					curr->_mu = curr->_mu * mu_l +
 							sqrt(1.0 - curr->_mu * curr->_mu) *
 							sqrt(1.0 - mu_l * mu_l) * sin(phi);
@@ -486,14 +495,17 @@ void Region::moveNeutrons() {
 				curr->_energy =
 						isotope->getInelasticScatterEnergy(curr->_energy);
 
-				log_printf(DEBUG, "Updated mu= %f, energy = %f",
-									curr->_mu, curr->_energy);
+				log_printf(DEBUG, "Updated mu= %f, phi = %f, energy = %f",
+									curr->_mu, curr->_phi, curr->_energy);
 			}
 
 			/* Check if collision type was elastic scattering */
 			else if (collision_type == ELASTIC) {
 
 				log_printf(DEBUG, "Elastic scatter type collision");
+
+				float phi = (float(rand()) / RAND_MAX) * 2.0 * M_PI;
+				curr->_phi = phi;
 
 				/* Isotropic in lab */
 				if (isotope->getElasticAngleType() == ISOTROPIC_LAB) {
@@ -517,7 +529,6 @@ void Region::moveNeutrons() {
 					float mu_cm = (float(rand()) / RAND_MAX) * 2.0 - 1.0;
 					int A = isotope->getA();
 					float mu_l = (1.0 + A*mu_cm)/(sqrt(A*A + 2*A*mu_cm + 1.0));
-					float phi = (float(rand()) / RAND_MAX) * 2.0 * M_PI;
 					curr->_mu = curr->_mu * mu_l +
 							sqrt(1.0 - curr->_mu * curr->_mu) *
 							sqrt(1.0 - mu_l * mu_l) * sin(phi);
@@ -530,8 +541,8 @@ void Region::moveNeutrons() {
 															((A+1.0)*(A+1.0));
 				}
 
-				log_printf(DEBUG, "Updated mu= %f, energy = %f",
-													curr->_mu, curr->_energy);
+				log_printf(DEBUG, "Updated mu= %f, phi = %f, energy = %f",
+									curr->_mu, curr->_phi, curr->_energy);
 			}
 
 			/* Play Russian Roulette with neutron */
@@ -550,19 +561,21 @@ void Region::moveNeutrons() {
 		/******************************************************************
 		 ********************  SURFACE INTERSECTIONS  *********************
 		 *****************************************************************/
+		else {
 
-		/* Check if this neutron is contained by an interior region */
-		if (inInteriorRegion(new_x, new_y, new_z))
-			nearest = _interior_region->computeMinSurfDist(curr, min_dist);
+			/* Check if this neutron is contained by an interior region */
+			if (inInteriorRegion(new_x, new_y, new_z))
+				nearest = _interior_region->computeMinSurfDist(curr, min_dist);
 
-		/* Find distance to nearest wall along neutron's trajectory */
-		else
-			nearest = computeMinSurfDist(curr, min_dist);
+			/* Find distance to nearest wall along neutron's trajectory */
+			else
+				nearest = computeMinSurfDist(curr, min_dist);
 
-		updateNeutronTime(curr, min_dist);
-		nearest->addNeutron(curr);
-		iter1 = _neutrons.erase(iter1);
-		--iter1;
+			updateNeutronTime(curr, min_dist);
+			nearest->addNeutron(curr);
+			iter1 = _neutrons.erase(iter1);
+			--iter1;
+		}
 	}
 
 	return;

@@ -54,6 +54,7 @@ private:
 	float _N;
 	float _T;
 	float _mu_avg;
+	bool _is_rescaled;
 	float* _capture_xs;
 	float* _capture_xs_energies;
 	int _num_capture_xs;
@@ -78,6 +79,9 @@ private:
 
 	/* Map of keys (xs types) with values (getXS functions for xs types) */
 	std::map<collisionType, float(Isotope::*)(float) const> _xs_handles;
+
+	/* Map of keys (xs types) with values (getXS functions for xs types) */
+	std::map<collisionType, float(Isotope::*)(int) const> _rescaled_xs_handles;
 
 	/* Map of keys (incoming inelastic scatter cdf bounds) with values for
 	 * inelastic scatter outgoing energy distributions */

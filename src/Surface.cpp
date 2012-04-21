@@ -174,7 +174,7 @@ bool XPlane::onSurface(neutron* neutron) {
  */
 void XPlane::moveNeutrons() {
 
-	log_printf(DEBUG, "Inside XPlane moveNeutrons method");
+	log_printf(DEBUG, "Inside XPlane moveNeutrons method with x = %f", _x);
 
 	neutron* curr;
 	float phi;
@@ -312,7 +312,7 @@ bool YPlane::onSurface(neutron* neutron) {
  */
 void YPlane::moveNeutrons() {
 
-	log_printf(DEBUG, "Inside YPlane moveNeutrons method");
+	log_printf(DEBUG, "Inside YPlane moveNeutrons method with y = %f", _y);
 
 	neutron* curr;
 	float phi;
@@ -449,7 +449,7 @@ bool ZPlane::onSurface(neutron* neutron) {
  */
 void ZPlane::moveNeutrons() {
 
-	log_printf(DEBUG, "Inside ZPlane moveNeutrons method");
+	log_printf(DEBUG, "Inside ZPlane moveNeutrons method with z = %f", _z);
 
 	neutron* curr;
 

@@ -31,7 +31,12 @@ int main(int argc, const char **argv) {
 
 	Options options(argc, argv);
 	Timer timer;
+
 	log_setlevel(options.getVerbosity());
+	int num_neutrons = options.getNumNeutrons();
+	int num_batches = options.getNumBatches();
+	int num_bins = options.getNumBins();
+	int num_threads = options.getNumThreads();
 
 	double N_A = 6.023E23;		/* Avogadro's number */
 
@@ -486,8 +491,10 @@ int main(int argc, const char **argv) {
 	test.setYRightSurface(y_right);
 	test.setZLeftSurface(z_left);
 	test.setZRightSurface(z_right);
-	test.setMaterial(&soil);
+//	test.setMaterial(&soil);
 //	test.setMaterial(&air);
+//	test.setMaterial(&detector_gas);
+	test.setMaterial(&tnt);
 
 	x_left->setRightRegion(&test);
 	x_right->setLeftRegion(&test);
@@ -497,7 +504,7 @@ int main(int argc, const char **argv) {
 	z_right->setLeftRegion(&test);
 
 	/* Load cube with */
-	for (int i=0; i < 1000; i++) {
+	for (int i=0; i < num_neutrons; i++) {
 		neutron* new_neutron = initializeNewNeutron();
 		new_neutron->_energy = 1E6;
 		new_neutron->_mu = -1.0;
@@ -512,15 +519,18 @@ int main(int argc, const char **argv) {
 		test.addNeutron(new_neutron);
 	}
 
-	int num_alive = 1000;
+	int num_alive = num_neutrons;
 	while (num_alive != 0) {
 		log_printf(NORMAL, "num alive = %d", num_alive);
 		test.moveNeutrons();
+		x_left->moveNeutrons();
+		x_right->moveNeutrons();
+		y_left->moveNeutrons();
+		y_right->moveNeutrons();
+		z_left->moveNeutrons();
+		z_right->moveNeutrons();
 		num_alive = test.getNumNeutrons();
-
 	}
-
-
 
 	timer.printSplits();
 

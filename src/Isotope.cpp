@@ -25,6 +25,7 @@ Isotope::Isotope() {
 	_alpha = float(_A-1)/float(_A+1) * float(_A-1)/float(_A+1);
 	_eta = (float(_A)+1.0) / (2.0 * sqrt(float(_A)));
 	_rho = (float(_A)-1.0) / (2.0 * sqrt(float(_A)));
+	_is_rescaled = false;
 
 	/* By default this isotope has no cross-sections */
 	_num_capture_xs = 0;
@@ -1111,10 +1112,11 @@ collisionType Isotope::getCollisionType(int energy_index) {
 	collisionType type = TOTAL;
 
 	/* Loops over all cross-section types to find the one for this energy */
-	std::map<collisionType, float(Isotope::*)(float)
+	std::map<collisionType, float(Isotope::*)(int)
 												const>::const_iterator iter;
 
-	for (iter = _xs_handles.begin(); iter != _xs_handles.end(); ++iter) {
+	for (iter = _rescaled_xs_handles.begin();
+							iter != _rescaled_xs_handles.end(); ++iter) {
 		next_collision_xs += (this->*iter->second)(energy_index) / total_xs;
 
 		if (test >= collision_xs && test <= next_collision_xs) {
@@ -1378,6 +1380,23 @@ Isotope* Isotope::clone() {
 				_num_total_xs);
 	}
 
+	/* If the isotope has rescaled xs */
+	if (_is_rescaled) {
+		/* Find the first set of xs values and use their energy values to rescale */
+		if (_num_capture_xs != 0)
+			new_clone->rescaleXS(_capture_xs_energies, _num_capture_xs);
+		else if (_num_scatter_xs != 0)
+			new_clone->rescaleXS(_scatter_xs_energies, _num_scatter_xs);
+		else if (_num_elastic_xs != 0)
+			new_clone->rescaleXS(_elastic_xs_energies, _num_elastic_xs);
+		else if (_num_inelastic_xs != 0)
+			new_clone->rescaleXS(_inelastic_xs_energies, _num_inelastic_xs);
+		else if (_num_fission_xs != 0)
+			new_clone->rescaleXS(_fission_xs_energies, _num_fission_xs);
+		else if (_num_total_xs != 0)
+			new_clone->rescaleXS(_total_xs_energies, _num_total_xs);
+	}
+
 	/* Deep copy the isotope's inelastic scatter cdfs */
 	std::map<std::pair<float, float>, std::pair< std::pair<float*,
 									float*>, int> >::iterator iter;
@@ -1556,42 +1575,74 @@ void Isotope::rescaleXS(float* energies, int num_energies) {
 			new_xs[i] = (this->*iter->second)(new_energies[i]);
 
 		if (iter->first == CAPTURE) {
-			_num_capture_xs = num_energies;
 			delete [] _capture_xs_energies;
 			delete _capture_xs;
-			setCaptureXS(new_xs, new_energies, num_energies);
+		    _capture_xs = new_xs;
+		    _capture_xs_energies = new_energies;
+		    _num_capture_xs = num_energies;
+		    float (Isotope::*func)(int) const;
+		    func = &Isotope::getCaptureXS;
+		    _rescaled_xs_handles.insert(std::pair<collisionType,
+		    		float(Isotope::*)(int) const>(CAPTURE, func));
 		}
 		else if (iter->first == SCATTER) {
-			_num_scatter_xs = num_energies;
 			delete [] _scatter_xs_energies;
 			delete _scatter_xs;
-			setScatterXS(new_xs, new_energies, num_energies, _scatter_angle);
+		    _scatter_xs = new_xs;
+		    _scatter_xs_energies = new_energies;
+		    _num_scatter_xs = num_energies;
+		    float (Isotope::*func)(int) const;
+		    func = &Isotope::getScatterXS;
+		    _rescaled_xs_handles.insert(std::pair<collisionType,
+		    		float(Isotope::*)(int) const>(SCATTER, func));
 		}
 		else if (iter->first == ELASTIC) {
-			_num_elastic_xs = num_energies;
 			delete [] _elastic_xs_energies;
 			delete _elastic_xs;
-			setElasticXS(new_xs, new_energies, num_energies, _elastic_angle);
+		    _elastic_xs = new_xs;
+		    _elastic_xs_energies = new_energies;
+			_num_elastic_xs = num_energies;
+		    float (Isotope::*func)(int) const;
+		    func = &Isotope::getElasticXS;
+		    _rescaled_xs_handles.insert(std::pair<collisionType,
+		    		float(Isotope::*)(int) const>(ELASTIC, func));
 		}
 		else if (iter->first == INELASTIC) {
-			_num_inelastic_xs = num_energies;
 			delete [] _inelastic_xs_energies;
 			delete _inelastic_xs;
-			setInelasticXS(new_xs, new_energies, num_energies, _inelastic_angle);
+		    _inelastic_xs = new_xs;
+		    _inelastic_xs_energies = new_energies;
+			_num_inelastic_xs = num_energies;
+		    float (Isotope::*func)(int) const;
+		    func = &Isotope::getInelasticXS;
+		    _rescaled_xs_handles.insert(std::pair<collisionType,
+		    		float(Isotope::*)(int) const>(INELASTIC, func));
 		}
 		else if (iter->first == FISSION) {
-			_num_fission_xs = num_energies;
 			delete [] _fission_xs_energies;
 			delete _fission_xs;
-			setFissionXS(new_xs, new_energies, num_energies);
+		    _fission_xs = new_xs;
+		    _fission_xs_energies = new_energies;
+			_num_fission_xs = num_energies;
+		    float (Isotope::*func)(int) const;
+		    func = &Isotope::getFissionXS;
+		    _rescaled_xs_handles.insert(std::pair<collisionType,
+		    		float(Isotope::*)(int) const>(FISSION, func));
 		}
 		else if (iter->first == TOTAL) {
-			_num_total_xs = num_energies;
 			delete [] _total_xs_energies;
 			delete _total_xs;
-			setTotalXS(new_xs, new_energies, num_energies);
+		    _total_xs = new_xs;
+		    _total_xs_energies = new_energies;
+			_num_total_xs = num_energies;
+		    float (Isotope::*func)(int) const;
+		    func = &Isotope::getTotalXS;
+		    _rescaled_xs_handles.insert(std::pair<collisionType,
+		    		float(Isotope::*)(int) const>(TOTAL, func));
 		}
 	}
+
+	_is_rescaled = true;
 
 	return;
 }
@@ -1608,8 +1659,6 @@ void Isotope::rescaleXS(float* energies, int num_energies) {
  */
 void Isotope::plotXS(float start_energy, float end_energy, int num_energies,
 													collisionType types, ...) {
-
-	log_printf(NORMAL, "Plotting xs for isotope: %s", _isotope_name.c_str());
 
 	/* Create an array of logarithmically spaced energies */
 	float* energies = logspace<float, float>(start_energy,
@@ -1640,8 +1689,6 @@ void Isotope::plotXS(float start_energy, float end_energy, int num_energies,
 
 	/* Loop through each isotope */
 	for (i=types; i >= 0; i=va_arg(xs_types, int)) {
-
-		log_printf(NORMAL, "plotting %d xs. type for isotope %s",i, _isotope_name.c_str());
 
 		std::stringstream legend;
 
