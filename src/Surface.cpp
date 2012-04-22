@@ -657,7 +657,7 @@ float XCircle::computeDistance(neutron* neutron) {
 
 bool XCircle::onSurface(neutron* neutron) {
 
-	if (fabs(_x0 - neutron->_x) > 1E-6)
+	if (fabs(_x0 - neutron->_x) > 1E-8)
 		return false;
 
 	float r_squared = (neutron->_y - _y0) * (neutron->_y - _y0) +
@@ -672,7 +672,7 @@ bool XCircle::onSurface(neutron* neutron) {
 
 bool XCircle::onSurface(float x, float y, float z) {
 
-	if (fabs(_x0 - x) > 1E-6)
+	if (fabs(_x0 - x) > 1E-8)
 		return false;
 
 	float r_squared = (y - _y0) * (y - _y0) +
@@ -796,7 +796,7 @@ float YCircle::computeDistance(neutron* neutron) {
 
 bool YCircle::onSurface(neutron* neutron) {
 
-	if (fabs(_y0 - neutron->_y) > 1E-6)
+	if (fabs(_y0 - neutron->_y) > 1E-8)
 		return false;
 
 	float r_squared = (neutron->_x - _x0) * (neutron->_x - _x0) +
@@ -811,7 +811,7 @@ bool YCircle::onSurface(neutron* neutron) {
 
 bool YCircle::onSurface(float x, float y, float z) {
 
-	if (fabs(_y0 - y) > 1E-6)
+	if (fabs(_y0 - y) > 1E-8)
 		return false;
 
 	float r_squared = (x - _x0) * (x - _x0) +
@@ -934,7 +934,7 @@ float ZCircle::computeDistance(neutron* neutron) {
 
 bool ZCircle::onSurface(neutron* neutron) {
 
-	if (fabs(_z0 - neutron->_z) > 1E-6)
+	if (fabs(_z0 - neutron->_z) > 1E-8)
 		return false;
 
 	float r_squared = (neutron->_x - _x0) * (neutron->_x - _x0) +
@@ -949,7 +949,7 @@ bool ZCircle::onSurface(neutron* neutron) {
 
 bool ZCircle::onSurface(float x, float y, float z) {
 
-	if (fabs(_z0 - z) > 1E-6)
+	if (fabs(_z0 - z) > 1E-8)
 		return false;
 
 	float r_squared = (x - _x0) * (x - _x0) +
@@ -1816,6 +1816,8 @@ void OpenZCylinder::addNeutron(neutron* neutron) {
 
 float OpenZCylinder::computeDistance(neutron* neutron) {
 
+//	log_printf(NORMAL, "Computing distance to z cylinder");
+
 	/* Set dist to infinity to begin with */
 	float dist = std::numeric_limits<float>::infinity();
 	float x = neutron->_x;
@@ -1825,11 +1827,15 @@ float OpenZCylinder::computeDistance(neutron* neutron) {
 	float vy = sin(neutron->_phi) * sin(acos(neutron->_mu));
 	float vz = neutron->_mu;
 
+//	log_printf(NORMAL, "x = %f, y = %f, z = %f, vx = %f, vy = %f, vz = %f", x, y, z, vx, vy ,vz);
+
 	float a = vx*vx + vy*vy;
 	float b = 2.0*x*vx - 2.0*_x0*vx + 2.0*y*vy - 2.0*_y0*vy;
 	float c = x*x + _x0*_x0 - 2.0*_x0*x + y*y + _y0*_y0 - 2.0*_y0*y - _r_squared;
 
 	float discr = b*b - 4.0*a*c;
+
+//	log_printf(NORMAL, "discr = %f", discr);
 
 	/* There is not an intersection point */
 	if (discr < 0)
@@ -1860,12 +1866,16 @@ float OpenZCylinder::computeDistance(neutron* neutron) {
 		float test_dist1 = std::numeric_limits<float>::infinity();
 		float test_dist2 = std::numeric_limits<float>::infinity();
 
+//		log_printf(NORMAL, "new_z1 = %f, new_z2 = %f, t1 = %f, t2 = %f", new_z1, new_z2, t1, t2);
+
 		if (t1 >= 0 && new_z1 >= _z_left && new_z1 <= _z_right) {
 			new_y = y + vy*t1;
 			new_x = x + vx*t1;
 			test_dist1 = sqrt((new_x - x)*(new_x - x) +
 						(new_y - y)*(new_y - y) +
 						(new_z1 - z)*(new_z1 - z));
+
+//			log_printf(NORMAL, "new_y = %f, new_x = %f, test_dist1 = %f", new_x, new_y, test_dist1);
 		}
 
 		if (t2 >= 0 && new_z2 >= _z_left && new_z2 <= _z_right) {
