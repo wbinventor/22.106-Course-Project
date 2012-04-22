@@ -26,6 +26,7 @@ Options::Options(int argc, const char **argv) {
 	_num_batches = 10;
 	_num_neutrons = 1000;
 	_num_threads = 1;
+	_test_regions = false;
 	_soil_type = DRY_POROUS;
 	_use_implicit_capture = false;
 	_use_forced_collision = false;
@@ -84,6 +85,10 @@ int Options::getNumNeutrons() const {
 
 int Options::getNumThreads() const {
 	return _num_threads;
+}
+
+bool Options::testRegions() const {
+	return _test_regions;
 }
 
 soilType Options::getSoilType() const {

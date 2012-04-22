@@ -31,6 +31,7 @@ private:
 	int _num_batches;
 	int _num_neutrons;
 	int _num_threads;
+	bool _test_regions;
 	soilType _soil_type;
 	bool _use_implicit_capture;
 	bool _use_forced_collision;
@@ -44,6 +45,7 @@ public:
     int getNumBatches() const;
     int getNumNeutrons() const;
     int getNumThreads() const;
+    bool testRegions() const;
     soilType getSoilType() const;
     bool useImplicitCapture() const;
     bool useForcedCollision() const;

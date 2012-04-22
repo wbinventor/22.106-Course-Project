@@ -19,6 +19,7 @@ class Region;
 #define PI_OVER_TWO 1.57079633
 #define THREE_PI_OVER_TWO 4.71238898
 #define TWO_PI 6.28318531
+#define TINY_MOVE 1E-3
 
 /* Pre-define the Region1D class so the compiler knows it exists */
 class Region1D;
@@ -60,6 +61,7 @@ public:
     virtual void addNeutron(neutron* neutron) =0;
     virtual float computeDistance(neutron* neutron) =0;
     virtual bool onSurface(neutron* neutron) =0;
+    virtual bool onSurface(float x, float y, float z) =0;
     virtual void moveNeutrons() =0;
 };
 
@@ -75,6 +77,7 @@ public:
     void addNeutron(neutron* neutron);
     float computeDistance(neutron* neutron);
     bool onSurface(neutron* neutron);
+    bool onSurface(float x, float y, float z);
     void moveNeutrons();
 };
 
@@ -90,6 +93,7 @@ public:
     void addNeutron(neutron* neutron);
     float computeDistance(neutron* neutron);
     bool onSurface(neutron* neutron);
+    bool onSurface(float x, float y, float z);
     void moveNeutrons();
 };
 
@@ -105,6 +109,7 @@ public:
     void addNeutron(neutron* neutron);
     float computeDistance(neutron* neutron);
     bool onSurface(neutron* neutron);
+    bool onSurface(float x, float y, float z);
     void moveNeutrons();
 };
 
@@ -127,6 +132,7 @@ public:
     virtual void addNeutron(neutron* neutron) =0;
     virtual float computeDistance(neutron* neutron) =0;
     virtual bool onSurface(neutron* neutron) =0;
+    virtual bool onSurface(float x, float y, float z) =0;
     virtual void moveNeutrons() =0;
 };
 
@@ -138,6 +144,7 @@ public:
     virtual void addNeutron(neutron* neutron);
     float computeDistance(neutron* neutron);
     bool onSurface(neutron* neutron);
+    bool onSurface(float x, float y, float z);
     void moveNeutrons();
 };
 
@@ -149,6 +156,7 @@ public:
     void addNeutron(neutron* neutron);
     float computeDistance(neutron* neutron);
     bool onSurface(neutron* neutron);
+    bool onSurface(float x, float y, float z);
     void moveNeutrons();
 };
 
@@ -160,6 +168,7 @@ public:
     void addNeutron(neutron* neutron);
     float computeDistance(neutron* neutron);
     bool onSurface(neutron* neutron);
+    bool onSurface(float x, float y, float z);
     void moveNeutrons();
 };
 
@@ -182,6 +191,7 @@ public:
     void addNeutron(neutron* neutron);
     float computeDistance(neutron* neutron);
     bool onSurface(neutron* neutron);
+    bool onSurface(float x, float y, float z);
     void moveNeutrons();
 };
 
@@ -203,6 +213,7 @@ public:
     virtual void addNeutron(neutron* neutron) =0;
     virtual float computeDistance(neutron* neutron) =0;
     virtual bool onSurface(neutron* neutron) =0;
+    virtual bool onSurface(float x, float y, float z) =0;
     virtual void moveNeutrons() =0;
 };
 
@@ -219,6 +230,7 @@ public:
     void addNeutron(neutron* neutron);
     float computeDistance(neutron* neutron);
     bool onSurface(neutron* neutron);
+    bool onSurface(float x, float y, float z);
     void moveNeutrons();
 };
 
@@ -235,6 +247,7 @@ public:
     void addNeutron(neutron* neutron);
     float computeDistance(neutron* neutron);
     bool onSurface(neutron* neutron);
+    bool onSurface(float x, float y, float z);
     void moveNeutrons();
 };
 
@@ -251,6 +264,7 @@ public:
     void addNeutron(neutron* neutron);
     float computeDistance(neutron* neutron);
     bool onSurface(neutron* neutron);
+    bool onSurface(float x, float y, float z);
     void moveNeutrons();
 };
 #endif /* SURFACE_H_ */
