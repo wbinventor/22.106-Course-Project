@@ -177,9 +177,7 @@ void Fissioner::plotSamples(int num_samples) {
 
 	/* Sample the CDF and tally the energies */
 	for (int i=0; i < num_samples; i++)
-		energy_bins->tally(0, emitNeutronMeV());
-
-	energy_bins->processTallyAccumulators();
+		energy_bins->tally(emitNeutronMeV());
 
 	/* Plot the tallied energies */
 	gnuplot_ctrl* handle = gnuplot_init();

@@ -1820,10 +1820,8 @@ void Isotope::plotSampledThermalScatteringEnergies(float energy,
 	/* Generate sampled outgoing energies */
 	for (int i=0; i < num_samples; i++) {
 		sample = getThermalScatteringEnergy(energy);
-		bins->tally(0, sample);
+		bins->tally(sample);
 	}
-
-	bins->processTallyAccumulators();
 
 	std::stringstream title;
 	std::stringstream filename;

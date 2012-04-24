@@ -17,137 +17,132 @@
 #include "gnuplot.h"
 #include "Timer.h"
 #include "Options.h"
+#include "BatchBinSet.h"
 #include "Isotope.h"
 #include "Material.h"
 #include "Neutron.h"
 #include "Region.h"
 
 
+double N_A = 6.023E23;		/* Avogadro's number */
+
+/* Dry air density at 20 C and 1 atm */
+float rho_air = 1.2041E-3;
+float rho_N14_air = rho_air * 0.781 * N_A / 14.0;
+float rho_O16_air = rho_air * 0.21 * N_A / 16.0;
+float rho_Ar40_air = rho_air * 0.09 * N_A / 40.0;
+
+/* He3 detector material densities from Baysoy and Subasi */
+float rho_detector_gas = 7.3E-4;
+float rho_He3_detector_gas = rho_detector_gas * 1.0 * N_A / 3.0;
+
+/* TNT density from Esheikh, Habbani, ElAgib */
+float rho_tnt = 1.8;
+float rho_H1_tnt = rho_tnt * 0.022 * N_A / 1.0;
+float rho_C12_tnt = rho_tnt * 0.370 * N_A / 12.0;
+float rho_N14_tnt = rho_tnt * 0.185 * N_A / 14.0;
+float rho_O16_tnt = rho_tnt * 0.423 * N_A / 16.0;
+
+/* Soil isotopic from paper by Elsheikh, Habbani, ElAgib,
+ * 2011 (g/cm^3) with natural isotope fractions taken from Wikipedia */
+
+/* Dry porous soil */
+float rho_soil = 1.1810;
+float rho_H1_soil = rho_soil * 0.015 * N_A / 1.0;
+float rho_O16_soil = rho_soil * 0.529 * N_A / 16.0;
+float rho_Si28_soil = rho_soil * 0.243 * 0.92223 * N_A / 28.0;
+float rho_Si29_soil = rho_soil * 0.243 * 0.04685 * N_A / 29.0;
+float rho_Si30_soil = rho_soil * 0.243 * 0.03092 * N_A / 30.0;
+float rho_Al27_soil = rho_soil * 0.071 * N_A / 27;
+float rho_Fe54_soil = rho_soil * 0.044 * 0.05845 * N_A / 54.0;
+float rho_Fe56_soil = rho_soil * 0.044 * 0.91754 * N_A / 56.0;
+float rho_Fe57_soil = rho_soil * 0.044 * 0.02119 * N_A / 57.0;
+float rho_Fe58_soil = rho_soil * 0.044 * 0.00282 * N_A / 58.0;
+float rho_Ca40_soil = rho_soil * 0.032 * 0.96941 * N_A / 40.0;
+float rho_Ca42_soil = rho_soil * 0.032 * 0.00647 * N_A / 42.0;
+float rho_Ca44_soil = rho_soil * 0.032 * 0.02086 * N_A / 44.0;
+float rho_K39_soil = rho_soil * 0.023 * 0.932581 * N_A / 39.0;
+float rho_K41_soil = rho_soil * 0.023 * 0.067302 * N_A / 41.0;
+float rho_Na23_soil = rho_soil * 0.025 * N_A / 23.0;
+float rho_Mg24_soil = rho_soil * 0.018 * 0.78958 * N_A / 24.0;
+float rho_Mg25_soil = rho_soil * 0.018 * 0.0999986 * N_A / 25.0;
+float rho_Mg26_soil =  rho_soil * 0.018 * 0.10987 * N_A / 26.0;
+
+/* Dry dense soil */
+//float rho_soil = 1.7714;
+//float rho_H1_soil = rho_soil * 0.015 * N_A / 16.0;
+//float rho_O16_soil = rho_soil * 0.529 * N_A / 1.0;
+//float rho_Si28_soil = rho_soil * 0.243 * 0.92223 * N_A / 28.0;
+//float rho_Si29_soil = rho_soil * 0.243 * 0.04685 * N_A / 29.0;
+//float rho_Si30_soil = rho_soil * 0.243 * 0.03092 * N_A / 30.0;
+//float rho_Al27_soil = rho_soil * 0.071 * N_A / 27;
+//float rho_Fe54_soil = rho_soil * 0.044 * 0.05845 * N_A / 54.0;
+//float rho_Fe56_soil = rho_soil * 0.044 * 0.91754 * N_A / 56.0;
+//float rho_Fe57_soil = rho_soil * 0.044 * 0.02119 * N_A / 57.0;
+//float rho_Fe58_soil = rho_soil * 0.044 * 0.00282 * N_A / 58.0;
+//float rho_Ca40_soil = rho_soil * 0.032 * 0.96941 * N_A / 40.0;
+//float rho_Ca42_soil = rho_soil * 0.032 * 0.00647 * N_A / 42.0;
+//float rho_Ca44_soil = rho_soil * 0.032 * 0.02086 * N_A / 44.0;
+//float rho_K39_soil = rho_soil * 0.023 * 0.932581 * N_A / 39.0;
+//float rho_K41_soil = rho_soil * 0.023 * 0.067302 * N_A / 41.0;
+//float rho_Na23_soil = rho_soil * 0.025 * N_A / 23.0;
+//float rho_Mg24_soil = rho_soil * 0.018 * 0.78958 * N_A / 24.0;
+//float rho_Mg25_soil = rho_soil * 0.018 * 0.0999986 * N_A / 25.0;
+//float rho_Mg26_soil =  rho_soil * 0.018 * 0.10987 * N_A / 26.0;
+//
+/* Wet porous soil */
+//float rho_soil = 1.3957;
+//float rho_H1_soil = rho_soil * 0.030 * N_A / 1.0;
+//float rho_O16_soil = rho_soil * 0.585 * N_A / 16.0;
+//float rho_Si28_soil = rho_soil * 0.205 * 0.92223 * N_A / 28.0;
+//float rho_Si29_soil = rho_soil * 0.205 * 0.04685 * N_A / 29.0;
+//float rho_Si30_soil = rho_soil * 0.205 * 0.03092 * N_A / 30.0;
+//float rho_Al27_soil = rho_soil * 0.060 * N_A / 27;
+//float rho_Fe54_soil = rho_soil * 0.037 * 0.05845 * N_A / 54.0;
+//float rho_Fe56_soil = rho_soil * 0.037 * 0.91754 * N_A / 56.0;
+//float rho_Fe57_soil = rho_soil * 0.037 * 0.02119 * N_A / 57.0;
+//float rho_Fe58_soil = rho_soil * 0.037 * 0.00282 * N_A / 58.0;
+//float rho_Ca40_soil = rho_soil * 0.027 * 0.96941 * N_A / 40.0;
+//float rho_Ca42_soil = rho_soil * 0.027 * 0.00647 * N_A / 42.0;
+//float rho_Ca44_soil = rho_soil * 0.027 * 0.02086 * N_A / 44.0;
+//float rho_K39_soil = rho_soil * 0.019 * 0.932581 * N_A / 39.0;
+//float rho_K41_soil = rho_soil * 0.019 * 0.067302 * N_A / 41.0;
+//float rho_Na23_soil = rho_soil * 0.021 * N_A / 23.0;
+//float rho_Mg24_soil = rho_soil * 0.015 * 0.78958 * N_A / 24.0;
+//float rho_Mg25_soil = rho_soil * 0.015 * 0.0999986 * N_A / 25.0;
+//float rho_Mg26_soil =  rho_soil * 0.015 * 0.10987 * N_A / 26.0;
+//
+/* Wet dense soil */
+//float rho_soil = 2.0935;
+//float rho_H1_soil = rho_soil * 0.030 * N_A / 1.0;
+//float rho_O16_soil = rho_soil * 0.585 * N_A / 16.0;
+//float rho_Si28_soil = rho_soil * 0.205 * 0.92223 * N_A / 28.0;
+//float rho_Si29_soil = rho_soil * 0.205 * 0.04685 * N_A / 29.0;
+//float rho_Si30_soil = rho_soil * 0.205 * 0.03092 * N_A / 30.0;
+//float rho_Al27_soil = rho_soil * 0.060 * N_A / 27;
+//float rho_Fe54_soil = rho_soil * 0.037 * 0.05845 * N_A / 54.0;
+//float rho_Fe56_soil = rho_soil * 0.037 * 0.91754 * N_A / 56.0;
+//float rho_Fe57_soil = rho_soil * 0.037 * 0.02119 * N_A / 57.0;
+//float rho_Fe58_soil = rho_soil * 0.037 * 0.00282 * N_A / 58.0;
+//float rho_Ca40_soil = rho_soil * 0.027 * 0.96941 * N_A / 40.0;
+//float rho_Ca42_soil = rho_soil * 0.027 * 0.00647 * N_A / 42.0;
+//float rho_Ca44_soil = rho_soil * 0.027 * 0.02086 * N_A / 44.0;
+//float rho_K39_soil = rho_soil * 0.019 * 0.932581 * N_A / 39.0;
+//float rho_K41_soil = rho_soil * 0.019 * 0.067302 * N_A / 41.0;
+//float rho_Na23_soil = rho_soil * 0.021 * N_A / 23.0;
+//float rho_Mg24_soil = rho_soil * 0.015 * 0.78958 * N_A / 24.0;
+//float rho_Mg25_soil = rho_soil * 0.015 * 0.0999986 * N_A / 25.0;
+//float rho_Mg26_soil =  rho_soil * 0.015 * 0.10987 * N_A / 26.0;
+//
+
+/* Declare and initialize all isotopes in problem */
+Isotope Al27, Ar40, B10, B11, C12, Ca40, Ca42, Ca44, Fe54, Fe56, Fe57, Fe58;
+Isotope H1, He3, K39, K41, Mg24, Mg25, Mg26, N14, Na23, O16, Si28, Si29, Si30;
+Material soil, air, detector_gas, tnt;
+ZCylinder mine, atmosphere, dirt, detector;
+
+
 void testRegions(Options* options, int num_neutrons, int num_batches, int num_bins, int num_threads) {
-	double N_A = 6.023E23;		/* Avogadro's number */
-
-	/* Dry air density at 20 C and 1 atm */
-	float rho_air = 1.2041E-3;
-	float rho_N14_air = rho_air * 0.781 * N_A / 14.0;
-	float rho_O16_air = rho_air * 0.21 * N_A / 16.0;
-	float rho_Ar40_air = rho_air * 0.09 * N_A / 40.0;
-
-	/* He3 detector material densities from Baysoy and Subasi */
-	float rho_detector_gas = 7.3E-4;
-	float rho_He3_detector_gas = rho_detector_gas * 1.0 * N_A / 3.0;
-
-	/* TNT density from Esheikh, Habbani, ElAgib */
-	float rho_tnt = 1.8;
-	float rho_H1_tnt = rho_tnt * 0.022 * N_A / 1.0;
-	float rho_C12_tnt = rho_tnt * 0.370 * N_A / 12.0;
-	float rho_N14_tnt = rho_tnt * 0.185 * N_A / 14.0;
-	float rho_O16_tnt = rho_tnt * 0.423 * N_A / 16.0;
-
-	/* Soil isotopic from paper by Elsheikh, Habbani, ElAgib,
-	 * 2011 (g/cm^3) with natural isotope fractions taken from Wikipedia */
-	float rho_soil;
-	float rho_H1_soil, rho_O16_soil, rho_Si28_soil, rho_Si29_soil;
-	float rho_Si30_soil, rho_Al27_soil, rho_Fe54_soil, rho_Fe56_soil;
-	float rho_Fe57_soil, rho_Fe58_soil, rho_Ca40_soil, rho_Ca42_soil;
-	float rho_Ca44_soil, rho_K39_soil, rho_K41_soil, rho_Mg24_soil;
-	float rho_Na23_soil, rho_Mg25_soil, rho_Mg26_soil;
-
-	if (options->getSoilType() == DRY_POROUS) {
-		rho_soil = 1.1810;
-		rho_H1_soil = rho_soil * 0.015 * N_A / 1.0;
-		rho_O16_soil = rho_soil * 0.529 * N_A / 16.0;
-		rho_Si28_soil = rho_soil * 0.243 * 0.92223 * N_A / 28.0;
-		rho_Si29_soil = rho_soil * 0.243 * 0.04685 * N_A / 29.0;
-		rho_Si30_soil = rho_soil * 0.243 * 0.03092 * N_A / 30.0;
-		rho_Al27_soil = rho_soil * 0.071 * N_A / 27;
-		rho_Fe54_soil = rho_soil * 0.044 * 0.05845 * N_A / 54.0;
-		rho_Fe56_soil = rho_soil * 0.044 * 0.91754 * N_A / 56.0;
-		rho_Fe57_soil = rho_soil * 0.044 * 0.02119 * N_A / 57.0;
-		rho_Fe58_soil = rho_soil * 0.044 * 0.00282 * N_A / 58.0;
-		rho_Ca40_soil = rho_soil * 0.032 * 0.96941 * N_A / 40.0;
-		rho_Ca42_soil = rho_soil * 0.032 * 0.00647 * N_A / 42.0;
-		rho_Ca44_soil = rho_soil * 0.032 * 0.02086 * N_A / 44.0;
-		rho_K39_soil = rho_soil * 0.023 * 0.932581 * N_A / 39.0;
-		rho_K41_soil = rho_soil * 0.023 * 0.067302 * N_A / 41.0;
-		rho_Na23_soil = rho_soil * 0.025 * N_A / 23.0;
-		rho_Mg24_soil = rho_soil * 0.018 * 0.78958 * N_A / 24.0;
-		rho_Mg25_soil = rho_soil * 0.018 * 0.0999986 * N_A / 25.0;
-		rho_Mg26_soil =  rho_soil * 0.018 * 0.10987 * N_A / 26.0;
-	}
-	else if (options->getSoilType() == DRY_DENSE) {
-		rho_soil = 1.7714;
-		rho_H1_soil = rho_soil * 0.015 * N_A / 16.0;
-		rho_O16_soil = rho_soil * 0.529 * N_A / 1.0;
-		rho_Si28_soil = rho_soil * 0.243 * 0.92223 * N_A / 28.0;
-		rho_Si29_soil = rho_soil * 0.243 * 0.04685 * N_A / 29.0;
-		rho_Si30_soil = rho_soil * 0.243 * 0.03092 * N_A / 30.0;
-		rho_Al27_soil = rho_soil * 0.071 * N_A / 27;
-		rho_Fe54_soil = rho_soil * 0.044 * 0.05845 * N_A / 54.0;
-		rho_Fe56_soil = rho_soil * 0.044 * 0.91754 * N_A / 56.0;
-		rho_Fe57_soil = rho_soil * 0.044 * 0.02119 * N_A / 57.0;
-		rho_Fe58_soil = rho_soil * 0.044 * 0.00282 * N_A / 58.0;
-		rho_Ca40_soil = rho_soil * 0.032 * 0.96941 * N_A / 40.0;
-		rho_Ca42_soil = rho_soil * 0.032 * 0.00647 * N_A / 42.0;
-		rho_Ca44_soil = rho_soil * 0.032 * 0.02086 * N_A / 44.0;
-		rho_K39_soil = rho_soil * 0.023 * 0.932581 * N_A / 39.0;
-		rho_K41_soil = rho_soil * 0.023 * 0.067302 * N_A / 41.0;
-		rho_Na23_soil = rho_soil * 0.025 * N_A / 23.0;
-		rho_Mg24_soil = rho_soil * 0.018 * 0.78958 * N_A / 24.0;
-		rho_Mg25_soil = rho_soil * 0.018 * 0.0999986 * N_A / 25.0;
-		rho_Mg26_soil =  rho_soil * 0.018 * 0.10987 * N_A / 26.0;
-	}
-	else if (options->getSoilType() == WET_POROUS) {
-		rho_soil = 1.3957;
-		rho_H1_soil = rho_soil * 0.030 * N_A / 1.0;
-		rho_O16_soil = rho_soil * 0.585 * N_A / 16.0;
-		rho_Si28_soil = rho_soil * 0.205 * 0.92223 * N_A / 28.0;
-		rho_Si29_soil = rho_soil * 0.205 * 0.04685 * N_A / 29.0;
-		rho_Si30_soil = rho_soil * 0.205 * 0.03092 * N_A / 30.0;
-		rho_Al27_soil = rho_soil * 0.060 * N_A / 27;
-		rho_Fe54_soil = rho_soil * 0.037 * 0.05845 * N_A / 54.0;
-		rho_Fe56_soil = rho_soil * 0.037 * 0.91754 * N_A / 56.0;
-		rho_Fe57_soil = rho_soil * 0.037 * 0.02119 * N_A / 57.0;
-		rho_Fe58_soil = rho_soil * 0.037 * 0.00282 * N_A / 58.0;
-		rho_Ca40_soil = rho_soil * 0.027 * 0.96941 * N_A / 40.0;
-		rho_Ca42_soil = rho_soil * 0.027 * 0.00647 * N_A / 42.0;
-		rho_Ca44_soil = rho_soil * 0.027 * 0.02086 * N_A / 44.0;
-		rho_K39_soil = rho_soil * 0.019 * 0.932581 * N_A / 39.0;
-		rho_K41_soil = rho_soil * 0.019 * 0.067302 * N_A / 41.0;
-		rho_Na23_soil = rho_soil * 0.021 * N_A / 23.0;
-		rho_Mg24_soil = rho_soil * 0.015 * 0.78958 * N_A / 24.0;
-		rho_Mg25_soil = rho_soil * 0.015 * 0.0999986 * N_A / 25.0;
-		rho_Mg26_soil =  rho_soil * 0.015 * 0.10987 * N_A / 26.0;
-	}
-	else {
-		rho_soil = 2.0935;
-		rho_H1_soil = rho_soil * 0.030 * N_A / 1.0;
-		rho_O16_soil = rho_soil * 0.585 * N_A / 16.0;
-		rho_Si28_soil = rho_soil * 0.205 * 0.92223 * N_A / 28.0;
-		rho_Si29_soil = rho_soil * 0.205 * 0.04685 * N_A / 29.0;
-		rho_Si30_soil = rho_soil * 0.205 * 0.03092 * N_A / 30.0;
-		rho_Al27_soil = rho_soil * 0.060 * N_A / 27;
-		rho_Fe54_soil = rho_soil * 0.037 * 0.05845 * N_A / 54.0;
-		rho_Fe56_soil = rho_soil * 0.037 * 0.91754 * N_A / 56.0;
-		rho_Fe57_soil = rho_soil * 0.037 * 0.02119 * N_A / 57.0;
-		rho_Fe58_soil = rho_soil * 0.037 * 0.00282 * N_A / 58.0;
-		rho_Ca40_soil = rho_soil * 0.027 * 0.96941 * N_A / 40.0;
-		rho_Ca42_soil = rho_soil * 0.027 * 0.00647 * N_A / 42.0;
-		rho_Ca44_soil = rho_soil * 0.027 * 0.02086 * N_A / 44.0;
-		rho_K39_soil = rho_soil * 0.019 * 0.932581 * N_A / 39.0;
-		rho_K41_soil = rho_soil * 0.019 * 0.067302 * N_A / 41.0;
-		rho_Na23_soil = rho_soil * 0.021 * N_A / 23.0;
-		rho_Mg24_soil = rho_soil * 0.015 * 0.78958 * N_A / 24.0;
-		rho_Mg25_soil = rho_soil * 0.015 * 0.0999986 * N_A / 25.0;
-		rho_Mg26_soil =  rho_soil * 0.015 * 0.10987 * N_A / 26.0;
-	}
-
-
-	/* Declare and initialize all isotopes in problem */
-	Isotope Al27, Ar40, B10, B11, C12, Ca40, Ca42, Ca44, Fe54, Fe56, Fe57, Fe58;
-	Isotope H1, He3, K39, K41, Mg24, Mg25, Mg26, N14, Na23, O16, Si28, Si29, Si30;
-	Material soil, air, detector_gas, tnt;
-	ZCylinder mine, atmosphere, dirt, detector;
-
 
 	/* Aluminum 27 */
 	Al27.setA(27);
@@ -243,7 +238,7 @@ void testRegions(Options* options, int num_neutrons, int num_batches, int num_bi
 	/* Helium 3 */
 	He3.setA(3);
 	He3.setIsotopeType("He3");
-	He3.loadXS("../pendf/He3-capture.txt", CAPTURE, "\t");
+	He3.loadXS("../pendf/He3-reprocessed_capture.txt", CAPTURE, "\t");
 	He3.loadXS("../pendf/He3-elastic.txt", ELASTIC, "\t");
 	He3.setElasticAngleType(ISOTROPIC_CM);
 
@@ -745,130 +740,9 @@ void testRegions(Options* options, int num_neutrons, int num_batches, int num_bi
 void BaysoySubasi(Options* options, int num_neutrons, int num_batches,
 		int num_bins, int num_threads) {
 
-	double N_A = 6.023E23;		/* Avogadro's number */
-
-	/* Dry air density at 20 C and 1 atm */
-	float rho_air = 1.2041E-3;
-	float rho_N14_air = rho_air * 0.781 * N_A / 14.0;
-	float rho_O16_air = rho_air * 0.21 * N_A / 16.0;
-	float rho_Ar40_air = rho_air * 0.09 * N_A / 40.0;
-
-	/* He3 detector material densities from Baysoy and Subasi */
-	float rho_detector_gas = 7.3E-4;
-	float rho_He3_detector_gas = rho_detector_gas * 1.0 * N_A / 3.0;
-
-	/* TNT density from Esheikh, Habbani, ElAgib */
-	float rho_tnt = 1.8;
-	float rho_H1_tnt = rho_tnt * 0.022 * N_A / 1.0;
-	float rho_C12_tnt = rho_tnt * 0.370 * N_A / 12.0;
-	float rho_N14_tnt = rho_tnt * 0.185 * N_A / 14.0;
-	float rho_O16_tnt = rho_tnt * 0.423 * N_A / 16.0;
-
-	/* Soil isotopic from paper by Elsheikh, Habbani, ElAgib,
-	 * 2011 (g/cm^3) with natural isotope fractions taken from Wikipedia */
-	float rho_soil;
-	float rho_H1_soil, rho_O16_soil, rho_Si28_soil, rho_Si29_soil;
-	float rho_Si30_soil, rho_Al27_soil, rho_Fe54_soil, rho_Fe56_soil;
-	float rho_Fe57_soil, rho_Fe58_soil, rho_Ca40_soil, rho_Ca42_soil;
-	float rho_Ca44_soil, rho_K39_soil, rho_K41_soil, rho_Mg24_soil;
-	float rho_Na23_soil, rho_Mg25_soil, rho_Mg26_soil;
-
-	if (options->getSoilType() == DRY_POROUS) {
-		rho_soil = 1.1810;
-		rho_H1_soil = rho_soil * 0.015 * N_A / 1.0;
-		rho_O16_soil = rho_soil * 0.529 * N_A / 16.0;
-		rho_Si28_soil = rho_soil * 0.243 * 0.92223 * N_A / 28.0;
-		rho_Si29_soil = rho_soil * 0.243 * 0.04685 * N_A / 29.0;
-		rho_Si30_soil = rho_soil * 0.243 * 0.03092 * N_A / 30.0;
-		rho_Al27_soil = rho_soil * 0.071 * N_A / 27;
-		rho_Fe54_soil = rho_soil * 0.044 * 0.05845 * N_A / 54.0;
-		rho_Fe56_soil = rho_soil * 0.044 * 0.91754 * N_A / 56.0;
-		rho_Fe57_soil = rho_soil * 0.044 * 0.02119 * N_A / 57.0;
-		rho_Fe58_soil = rho_soil * 0.044 * 0.00282 * N_A / 58.0;
-		rho_Ca40_soil = rho_soil * 0.032 * 0.96941 * N_A / 40.0;
-		rho_Ca42_soil = rho_soil * 0.032 * 0.00647 * N_A / 42.0;
-		rho_Ca44_soil = rho_soil * 0.032 * 0.02086 * N_A / 44.0;
-		rho_K39_soil = rho_soil * 0.023 * 0.932581 * N_A / 39.0;
-		rho_K41_soil = rho_soil * 0.023 * 0.067302 * N_A / 41.0;
-		rho_Na23_soil = rho_soil * 0.025 * N_A / 23.0;
-		rho_Mg24_soil = rho_soil * 0.018 * 0.78958 * N_A / 24.0;
-		rho_Mg25_soil = rho_soil * 0.018 * 0.0999986 * N_A / 25.0;
-		rho_Mg26_soil =  rho_soil * 0.018 * 0.10987 * N_A / 26.0;
-	}
-	else if (options->getSoilType() == DRY_DENSE) {
-		rho_soil = 1.7714;
-		rho_H1_soil = rho_soil * 0.015 * N_A / 16.0;
-		rho_O16_soil = rho_soil * 0.529 * N_A / 1.0;
-		rho_Si28_soil = rho_soil * 0.243 * 0.92223 * N_A / 28.0;
-		rho_Si29_soil = rho_soil * 0.243 * 0.04685 * N_A / 29.0;
-		rho_Si30_soil = rho_soil * 0.243 * 0.03092 * N_A / 30.0;
-		rho_Al27_soil = rho_soil * 0.071 * N_A / 27;
-		rho_Fe54_soil = rho_soil * 0.044 * 0.05845 * N_A / 54.0;
-		rho_Fe56_soil = rho_soil * 0.044 * 0.91754 * N_A / 56.0;
-		rho_Fe57_soil = rho_soil * 0.044 * 0.02119 * N_A / 57.0;
-		rho_Fe58_soil = rho_soil * 0.044 * 0.00282 * N_A / 58.0;
-		rho_Ca40_soil = rho_soil * 0.032 * 0.96941 * N_A / 40.0;
-		rho_Ca42_soil = rho_soil * 0.032 * 0.00647 * N_A / 42.0;
-		rho_Ca44_soil = rho_soil * 0.032 * 0.02086 * N_A / 44.0;
-		rho_K39_soil = rho_soil * 0.023 * 0.932581 * N_A / 39.0;
-		rho_K41_soil = rho_soil * 0.023 * 0.067302 * N_A / 41.0;
-		rho_Na23_soil = rho_soil * 0.025 * N_A / 23.0;
-		rho_Mg24_soil = rho_soil * 0.018 * 0.78958 * N_A / 24.0;
-		rho_Mg25_soil = rho_soil * 0.018 * 0.0999986 * N_A / 25.0;
-		rho_Mg26_soil =  rho_soil * 0.018 * 0.10987 * N_A / 26.0;
-	}
-	else if (options->getSoilType() == WET_POROUS) {
-		rho_soil = 1.3957;
-		rho_H1_soil = rho_soil * 0.030 * N_A / 1.0;
-		rho_O16_soil = rho_soil * 0.585 * N_A / 16.0;
-		rho_Si28_soil = rho_soil * 0.205 * 0.92223 * N_A / 28.0;
-		rho_Si29_soil = rho_soil * 0.205 * 0.04685 * N_A / 29.0;
-		rho_Si30_soil = rho_soil * 0.205 * 0.03092 * N_A / 30.0;
-		rho_Al27_soil = rho_soil * 0.060 * N_A / 27;
-		rho_Fe54_soil = rho_soil * 0.037 * 0.05845 * N_A / 54.0;
-		rho_Fe56_soil = rho_soil * 0.037 * 0.91754 * N_A / 56.0;
-		rho_Fe57_soil = rho_soil * 0.037 * 0.02119 * N_A / 57.0;
-		rho_Fe58_soil = rho_soil * 0.037 * 0.00282 * N_A / 58.0;
-		rho_Ca40_soil = rho_soil * 0.027 * 0.96941 * N_A / 40.0;
-		rho_Ca42_soil = rho_soil * 0.027 * 0.00647 * N_A / 42.0;
-		rho_Ca44_soil = rho_soil * 0.027 * 0.02086 * N_A / 44.0;
-		rho_K39_soil = rho_soil * 0.019 * 0.932581 * N_A / 39.0;
-		rho_K41_soil = rho_soil * 0.019 * 0.067302 * N_A / 41.0;
-		rho_Na23_soil = rho_soil * 0.021 * N_A / 23.0;
-		rho_Mg24_soil = rho_soil * 0.015 * 0.78958 * N_A / 24.0;
-		rho_Mg25_soil = rho_soil * 0.015 * 0.0999986 * N_A / 25.0;
-		rho_Mg26_soil =  rho_soil * 0.015 * 0.10987 * N_A / 26.0;
-	}
-	else {
-		rho_soil = 2.0935;
-		rho_H1_soil = rho_soil * 0.030 * N_A / 1.0;
-		rho_O16_soil = rho_soil * 0.585 * N_A / 16.0;
-		rho_Si28_soil = rho_soil * 0.205 * 0.92223 * N_A / 28.0;
-		rho_Si29_soil = rho_soil * 0.205 * 0.04685 * N_A / 29.0;
-		rho_Si30_soil = rho_soil * 0.205 * 0.03092 * N_A / 30.0;
-		rho_Al27_soil = rho_soil * 0.060 * N_A / 27;
-		rho_Fe54_soil = rho_soil * 0.037 * 0.05845 * N_A / 54.0;
-		rho_Fe56_soil = rho_soil * 0.037 * 0.91754 * N_A / 56.0;
-		rho_Fe57_soil = rho_soil * 0.037 * 0.02119 * N_A / 57.0;
-		rho_Fe58_soil = rho_soil * 0.037 * 0.00282 * N_A / 58.0;
-		rho_Ca40_soil = rho_soil * 0.027 * 0.96941 * N_A / 40.0;
-		rho_Ca42_soil = rho_soil * 0.027 * 0.00647 * N_A / 42.0;
-		rho_Ca44_soil = rho_soil * 0.027 * 0.02086 * N_A / 44.0;
-		rho_K39_soil = rho_soil * 0.019 * 0.932581 * N_A / 39.0;
-		rho_K41_soil = rho_soil * 0.019 * 0.067302 * N_A / 41.0;
-		rho_Na23_soil = rho_soil * 0.021 * N_A / 23.0;
-		rho_Mg24_soil = rho_soil * 0.015 * 0.78958 * N_A / 24.0;
-		rho_Mg25_soil = rho_soil * 0.015 * 0.0999986 * N_A / 25.0;
-		rho_Mg26_soil =  rho_soil * 0.015 * 0.10987 * N_A / 26.0;
-	}
-
-
-	/* Declare and initialize all isotopes in problem */
-	Isotope Al27, Ar40, B10, B11, C12, Ca40, Ca42, Ca44, Fe54, Fe56, Fe57, Fe58;
-	Isotope H1, He3, K39, K41, Mg24, Mg25, Mg26, N14, Na23, O16, Si28, Si29, Si30;
-	Material soil, air, detector_gas, tnt;
-	ZCylinder mine, atmosphere, dirt, detector;
-
+	BatchBinSet* detector_coll_rate = new BatchBinSet();
+	detector_coll_rate->createBinners(1E-5, 1E7, 1,
+			num_batches, COLLISION_RATE, LINEAR, ENERGY);
 
 	/* Aluminum 27 */
 	Al27.setA(27);
@@ -964,9 +838,10 @@ void BaysoySubasi(Options* options, int num_neutrons, int num_batches,
 	/* Helium 3 */
 	He3.setA(3);
 	He3.setIsotopeType("He3");
-	He3.loadXS("../pendf/He3-capture.txt", CAPTURE, "\t");
+	He3.loadXS("../pendf/He3-reprocessed_capture.txt", CAPTURE, "\t");
 	He3.loadXS("../pendf/He3-elastic.txt", ELASTIC, "\t");
 	He3.setElasticAngleType(ISOTROPIC_CM);
+	He3.plotXS(1E-5, 1E7, 1000, CAPTURE, ELASTIC, NULL);
 
 	/* Potassium 39 */
 	K39.setA(39);
@@ -1085,7 +960,6 @@ void BaysoySubasi(Options* options, int num_neutrons, int num_batches,
 	tnt.addIsotope(&O16, rho_O16_tnt);
 	tnt.rescaleCrossSections(1E-5, 2E6, 50000);
 
-
 	/* Setup atmosphere cylinder */
 	ZCircle* atmosphere_top = new ZCircle();
 	atmosphere_top->setBoundaryType(VACUUM);
@@ -1184,45 +1058,124 @@ void BaysoySubasi(Options* options, int num_neutrons, int num_batches,
 	mine_cylinder->setLeftRegion(&mine);
 	mine_cylinder->setRightRegion(&dirt);
 
-	dirt.setInteriorRegion(&mine);
+//	dirt.setInteriorRegion(&mine);
 
-	/* Load atmosphere with neutrons */
-	for (int i=0; i < num_neutrons; i++) {
-		neutron* new_neutron = initializeNewNeutron();
-		new_neutron->_energy = 1E6;
-		new_neutron->_mu = -1.0;
-		new_neutron->_phi = 0.0;
-		new_neutron->_thread_num = 1;
-		new_neutron->_time = 0.0;
-		new_neutron->_weight = 1.0;
-		new_neutron->_x = 0.0;
-		new_neutron->_y = 0.0;
-		new_neutron->_z = 5.0;
+	/* Set up simple detector region */
+	ZCircle* detector_top = new ZCircle();
+	detector_top->setBoundaryType(INTERFACE);
+	detector_top->setRadius(5.0);
+	detector_top->setX0(0.0);
+	detector_top->setY0(0.0);
+	detector_top->setZ0(25.0);
 
-		atmosphere.addNeutron(new_neutron);
+	ZCircle* detector_bottom = new ZCircle();
+	detector_bottom->setBoundaryType(INTERFACE);
+	detector_bottom->setRadius(5.0);
+	detector_bottom->setX0(0.0);
+	detector_bottom->setY0(0.0);
+	detector_bottom->setZ0(10.0);
+
+	OpenZCylinder* detector_cylinder = new OpenZCylinder();
+	detector_cylinder->setBoundaryType(INTERFACE);
+	detector_cylinder->setRadius(5.0);
+	detector_cylinder->setX0(0.0);
+	detector_cylinder->setY0(0.0);
+	detector_cylinder->setZ0(10.0);
+	detector_cylinder->setZLeft(10.0);
+	detector_cylinder->setZRight(25.0);
+
+	detector.setRegionName((char*)"detector");
+	detector.setMaterial(&detector_gas);
+	detector.setZLeftCircle(detector_bottom);
+	detector.setZRightCircle(detector_top);
+	detector.setOpenZCylinder(detector_cylinder);
+
+	detector_top->setLeftRegion(&detector);
+	detector_top->setRightRegion(&atmosphere);
+	detector_bottom->setLeftRegion(&atmosphere);
+	detector_bottom->setRightRegion(&detector);
+	detector_cylinder->setLeftRegion(&detector);
+	detector_cylinder->setRightRegion(&atmosphere);
+
+	atmosphere.setInteriorRegion(&detector);
+
+	/* Set up implicit capture regions */
+	if (options->useImplicitCapture()) {
+		float w_low = options->getWeightLow();
+		float w_avg = options->getWeightAvg();
+		atmosphere.useImplicitCapture(w_low, w_avg);
+		dirt.useImplicitCapture(w_low, w_avg);
+		mine.useImplicitCapture(w_low, w_avg);
+		detector.useImplicitCapture(w_low, w_avg);
 	}
 
-	int num_alive = num_neutrons;
-	log_printf(NORMAL, "Testing neutrons inside of atmosphere");
-	while (num_alive != 0) {
-		log_printf(NORMAL, "num alive = %d\tin air = %d\tin dirt = %d\tin mine = %d", num_alive,
-				atmosphere.getNumNeutrons(), dirt.getNumNeutrons(), mine.getNumNeutrons());
-		atmosphere.moveNeutrons();
-		dirt.moveNeutrons();
-		mine.moveNeutrons();
-		atmosphere_cylinder->moveNeutrons();
-		dirt_cylinder->moveNeutrons();
-		mine_cylinder->moveNeutrons();
-		atmosphere_top->moveNeutrons();
-		atmosphere_dirt_interface->moveNeutrons();
-		dirt_bottom->moveNeutrons();
-		mine_top->moveNeutrons();
-		mine_bottom->moveNeutrons();
-		mine_cylinder->moveNeutrons();
-		num_alive = atmosphere.getNumNeutrons() +
-				dirt.getNumNeutrons() + mine.getNumNeutrons();
+	/* Set up forced collision in detector */
+	if (options->useForcedCollision()) {
+		float w_low = options->getWeightLow();
+		float w_avg = options->getWeightAvg();
+		detector.useForcedCollision(w_low, w_avg);
 	}
 
+
+	/* Loop over batches */
+	for (int i=0; i < num_batches; i++) {
+
+		/* Load atmosphere with neutrons */
+		for (int j=0; j < num_neutrons; j++) {
+			neutron* new_neutron = initializeNewNeutron();
+			new_neutron->_energy = 1E6;
+			new_neutron->_mu = -1.0;
+			new_neutron->_phi = 0.0;
+			new_neutron->_thread_num = 1;
+			new_neutron->_time = 0.0;
+			new_neutron->_weight = 1.0;
+			new_neutron->_x = 0.0;
+			new_neutron->_y = 0.0;
+			new_neutron->_z = 5.0;
+
+			atmosphere.addNeutron(new_neutron);
+		}
+
+		detector.clearBinners();
+		detector.addBinner(detector_coll_rate->getBinner(i));
+
+		int num_alive = num_neutrons;
+		log_printf(NORMAL, "Testing neutrons inside of Baysoy Subasi mine/detector geometry");
+		while (num_alive != 0) {
+
+			log_printf(NORMAL, "batch # = %d\tnum alive = %d\tin air = %d\tin dirt = %d"
+					"\tin mine = %d\tin detector = %d", i, num_alive,
+					atmosphere.getNumNeutrons(), dirt.getNumNeutrons(),
+					mine.getNumNeutrons(), detector.getNumNeutrons());
+
+			atmosphere.moveNeutrons();
+			dirt.moveNeutrons();
+			mine.moveNeutrons();
+			detector.moveNeutrons();
+
+			atmosphere_cylinder->moveNeutrons();
+			dirt_cylinder->moveNeutrons();
+			mine_cylinder->moveNeutrons();
+			detector_cylinder->moveNeutrons();
+			atmosphere_top->moveNeutrons();
+			atmosphere_dirt_interface->moveNeutrons();
+			dirt_bottom->moveNeutrons();
+			mine_top->moveNeutrons();
+			mine_bottom->moveNeutrons();
+			mine_cylinder->moveNeutrons();
+			detector_top->moveNeutrons();
+			detector_bottom->moveNeutrons();
+
+			num_alive = atmosphere.getNumNeutrons() + dirt.getNumNeutrons() +
+					mine.getNumNeutrons() + detector.getNumNeutrons();
+		}
+	}
+
+
+	detector_coll_rate->computeBatchStatistics();
+	detector_coll_rate->outputBatchStatistics((const char*)"detector_coll_rate.txt");
+
+	delete detector_coll_rate;
 	delete atmosphere_top;
 	delete atmosphere_dirt_interface;
 	delete dirt_bottom;
@@ -1231,11 +1184,14 @@ void BaysoySubasi(Options* options, int num_neutrons, int num_batches,
 	delete mine_top;
 	delete mine_bottom;
 	delete mine_cylinder;
+	delete detector_top;
+	delete detector_bottom;
+	delete detector_cylinder;
 
 	return;
 }
 
-//TODO: Create neutron source
+
 
 int main(int argc, const char **argv) {
 

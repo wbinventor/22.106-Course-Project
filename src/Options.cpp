@@ -44,6 +44,8 @@ Options::Options(int argc, const char **argv) {
 				_num_neutrons = atoi(argv[i]);
 			else if (LAST("-nthreads"))
 				_num_threads = atoi(argv[i]);
+			else if (LAST("-tr"))
+				_test_regions = true;
 			else if (LAST("-dp"))
 				_soil_type = DRY_POROUS;
 			else if (LAST("-dd"))

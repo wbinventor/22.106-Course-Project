@@ -67,18 +67,9 @@ class Binner{
 protected:
 	char* _name;
 	int _num_bins;
-	int _num_threads;
 	float* _edges;
 	double* _centers;
 	double* _tallies;
-	double* _tallies_squared;
-	double* _tally_acc;
-
-	bool _statistics_compute;
-	double* _bin_mu;
-	double* _bin_variance;
-	double* _bin_std_dev;
-	double* _bin_rel_err;
 
 	float _bin_delta;
 	binnerType _binner_type;
@@ -102,12 +93,6 @@ public:
 	float getBinDelta(neutron* neutron);
 	double* getTallies();
 	double getTally(int bin_index);
-	double* getTalliesSquared();
-	double getTallySquared(int bin_index);
-	double* getBinMu();
-	double* getBinVariance();
-	double* getBinStdDev();
-	double* getBinRelativeError();
 	int getBinIndex(neutron* neutron);
 	int getBinIndex(float sample);
 	char* getIsotopes();
@@ -122,8 +107,7 @@ public:
 	void generateBinEdges(float start, float end, int num_bins, spacingType type);
 	void generateBinCenters();
 
-	void tally(int thread_num, neutron* neutron);
-	void tally(int thread_num, float sample);
+	void tally(float sample);
 	virtual void weightedTally(neutron* neutron, float sigma_t,
 			int energy_index, Material* material, Isotope* isotope) =0;
 	void processTallyAccumulators();

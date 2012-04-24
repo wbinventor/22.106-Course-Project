@@ -126,12 +126,17 @@ void Region::setInteriorRegion(Region* region) {
  */
 void Region::addNeutron(neutron* neutron) {
 
-	if (!contains(neutron->_x, neutron->_y, neutron->_z))
-		log_printf(ERROR, "Cannot add a neutron %s to region %s"
+	if (!contains(neutron->_x, neutron->_y, neutron->_z)) {
+		log_printf(WARNING, "Cannot add a neutron %s to region %s"
 				"since it does not contain it",
 				neutronToString(neutron).c_str(), _region_name);
-
-	_neutrons.push_back(neutron);
+		delete neutron;
+		return;
+	}
+	else {
+		_neutrons.push_back(neutron);
+		return;
+	}
 }
 
 
@@ -182,6 +187,9 @@ bool Region::playRussianRoulette(neutron* neutron) {
 	if (neutron->_weight < _weight_low) {
 		float test = float(rand()) / RAND_MAX;
 
+		log_printf(DEBUG, "testing %f against %f", test,
+				neutron->_weight / _weight_avg);
+
 		if (test > (neutron->_weight / _weight_avg))
 			kill_neutron = true;
 	}
@@ -195,17 +203,6 @@ bool Region::playRussianRoulette(neutron* neutron) {
  * Clear this region's vector of Binner class object pointers
  */
 void Region::clearBinners() {
-
-	/* First iterate over each binner and accumulate tallies */
-	std::vector<Binner*>::iterator iter;
-	Binner* curr_bin;
-
-	for (iter = _bin_sets.begin(); iter != _bin_sets.end(); ++iter) {
-		curr_bin = *iter;
-		curr_bin->processTallyAccumulators();
-	}
-
-	/* Then remove the binners from this Region */
 	_bin_sets.clear();
 }
 
@@ -287,6 +284,9 @@ void Region::moveNeutrons() {
 		log_printf(DEBUG, "Region %s contains %d neutrons",
 										_region_name, _neutrons.size());
 
+		if (strcmp("detector", _region_name) == 0)
+			log_printf(NORMAL, "Moving neutron inside of detector");
+
 		curr = (*iter1);
 
 		log_printf(DEBUG, "%s", neutronToString(curr).c_str());
@@ -306,6 +306,13 @@ void Region::moveNeutrons() {
 		log_printf(DEBUG, "sigma_t = %f, path_length = %f, new_x = %f, "
 				"new_y = %f, new_z = %f", sigma_t, path_length,
 											new_x, new_y, new_z);
+
+		if (strcmp("detector", _region_name) == 0) {
+			log_printf(NORMAL, "sigma_t = %f, path_length = %f, new_x = %f, "
+					"new_y = %f, new_z = %f", sigma_t, path_length,
+												new_x, new_y, new_z);
+		}
+
 
 		/* The neutron collided within this region */
 		if (contains(new_x, new_y, new_z)) {
@@ -366,6 +373,8 @@ void Region::moveNeutrons() {
 
 			/* Forced collision variance reduction */
 			else if (_use_forced_collision) {
+
+				log_printf(NORMAL, "Using forced collision");
 
 				log_printf(DEBUG, "Applying forced collision to neutron with "
 						"weight = %f", curr->_weight);
@@ -580,11 +589,24 @@ void Region::moveNeutrons() {
 				nearest = computeMinSurfDist(curr, min_dist);
 
 			updateNeutronTime(curr, min_dist);
-			nearest->addNeutron(curr);
+
+			if (nearest == NULL)
+				log_printf(WARNING, "Unable to find a surface to put %s on.",
+						neutronToString(curr).c_str());
+			else
+				nearest->addNeutron(curr);
+
 			iter1 = _neutrons.erase(iter1);
 			--iter1;
 		}
 	}
+
+
+	/* Loop over all bordering surfaces and move their neutrons */
+//	std::vector<Surface*>::iterator iter;
+//
+//	for (iter = _boundaries.begin(); iter != _boundaries.end(); ++iter)
+//		(*iter)->moveNeutrons();
 
 	return;
 }

@@ -244,6 +244,8 @@ void BatchBinSet::createBinners(float* bin_edges, int num_bins,
  */
 void BatchBinSet::computeBatchStatistics() {
 
+	log_printf(NORMAL, "Computing batch statistics...");
+
 	if (_num_batches == 0)
 		log_printf(ERROR, "Cannot compute batch statistics since the binners"
 				" for this BatchBinSet have not yet been generated");
@@ -264,14 +266,19 @@ void BatchBinSet::computeBatchStatistics() {
 		for (int j=0; j < _num_batches; j++) {
 			s1 += _binners[j].getTally(i);
 			s2 += _binners[j].getTally(i) * _binners[j].getTally(i);
+			log_printf(NORMAL, "j = %d, s1 = %f, s2 = %f", j, s1, s2);
 		}
 
 		/* Compute batch average */
 		_batch_mu[i] = s1 / _num_batches;
 
+		log_printf(NORMAL, "Batch mu = %f", _batch_mu[i]);
+
 		/* Compute batch variance */
 		_batch_variance[i] = (1.0 / (float(_num_batches) - 1.0)) *
-				(s2 / float(_num_batches)) - (_batch_mu[i]*_batch_mu[i]);
+				(s2 / float(_num_batches) - (_batch_mu[i]*_batch_mu[i]));
+
+		log_printf(NORMAL, "_batch_variance[i] = %f", _batch_variance[i]);
 
 		_batch_std_dev[i] = sqrt(_batch_variance[i]);
 		_batch_rel_err[i] = _batch_std_dev[i] / _batch_mu[i];
@@ -339,7 +346,7 @@ void BatchBinSet::computeScaledBatchStatistics(float scale_factor) {
 
 		/* Compute batch variance */
 		_batch_variance[i] = (1.0 / (float(_num_batches) - 1.0)) *
-				(s2 / float(_num_batches)) - (_batch_mu[i]*_batch_mu[i]);
+				(s2 / float(_num_batches) - (_batch_mu[i]*_batch_mu[i]));
 
 		_batch_std_dev[i] = sqrt(_batch_variance[i]);
 		_batch_rel_err[i] = _batch_std_dev[i] / _batch_mu[i];

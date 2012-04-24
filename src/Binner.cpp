@@ -18,15 +18,11 @@ Binner::Binner() {
 	/* Default name is blank */
 	_name = (char*)"";
 
-	_num_threads = 1;
-
 	 /* Sets the default delta between bins to zero */
 	_bin_delta = 0;
 
 	/* Default is to tally all isotopes */
 	_isotopes = (char*)"all";
-
-	_statistics_compute = false;
 
 	omp_init_lock(&_lock);
 }
@@ -40,12 +36,6 @@ Binner::~Binner() {
 
 	if (_num_bins != 0) {
 		delete [] _tallies;
-		delete [] _tally_acc;
-		delete [] _tallies_squared;
-		delete [] _bin_mu;
-		delete [] _bin_variance;
-		delete [] _bin_std_dev;
-		delete [] _bin_rel_err;
 		delete [] _centers;
 
 		/* If the bin edges were generated rather than defined by the user */
@@ -196,96 +186,6 @@ double Binner::getTally(int bin_index) {
 
 
 /**
- * Returns a double array of the sum of the squares of the tallies
- * within each bin
- * @return an array of
- */
-double* Binner::getTalliesSquared() {
-	 if (_num_bins == 0)
-		 log_printf(ERROR, "Cannot return tallies squared for Binner %s since "
-				 "the bins have not yet been created", _name);
-
-	 return _tallies_squared;
-}
-
-
-/**
- * Returns a specific sum of the tallies squared for a specific bin
- * @param bin_index the index for the bin of interest
- * @return the sum of the squares of the tallies within that bin
- */
-double Binner::getTallySquared(int bin_index) {
-
-	if (bin_index < 0 || bin_index >= _num_bins)
-		log_printf(ERROR, "Tried to get a tally for a bin index for Binner %s"
-				"which does not exist: %d, num_bins = %d", _name, bin_index,
-				_num_bins);
-
-	return _tallies[bin_index];
-}
-
-
-/**
- * Returns a pointer to an array of bin averages if they have been
- * computed
- * @return a double array of bin averages for each bin
- */
-double* Binner::getBinMu() {
-
-	if (!_statistics_compute)
-		log_printf(ERROR, "Statistics have not yet been computed for "
-				"Binner %s so bin mu cannot be returned", _name);
-
-	return _bin_mu;
-}
-
-
-/**
- * Returns a pointer to an array of bin variances if they have been
- * computed
- * @return a double array of bin variances for each bin
- */
-double* Binner::getBinVariance() {
-
-	if (!_statistics_compute)
-		log_printf(ERROR, "Statistics have not yet been computed for "
-				"Binner %s so bin variance cannot be returned", _name);
-
-	return _bin_variance;
-}
-
-
-/**
- * Returns a pointer to an array of bin standard deviations if they have
- * been computed
- * @return a double array of bin standard deviations for each bin
- */
-double* Binner::getBinStdDev() {
-
-	if (!_statistics_compute)
-		log_printf(ERROR, "Statistics have not yet been computed for "
-				"Binner %s so bin std dev cannot be returned", _name);
-
-	return _bin_std_dev;
-}
-
-
-/**
- * Returns a pointer to an array of batch relative errors if they have been
- * computed
- * @return a double array of batch relative errors for each bin
- */
-double* Binner::getBinRelativeError() {
-
-	if (!_statistics_compute)
-		log_printf(ERROR, "Statistics have not yet been computed for "
-		"Binner %s so bin relative error cannot be returned", _name);
-
-	return _bin_rel_err;
-}
-
-
-/**
  * Finds the bin index for a sample in a set of bins. If the samples
  * is outside the bounds of all bins, it returns infinity
  * @param sample the sample value of interest
@@ -413,18 +313,6 @@ void Binner::setBinnerName(char* name) {
 
 
 /**
- * Sets the number of threads used in the simulation. The Binner
- * must know this to ensure that asynchronous tallying is accumulated
- * in S1 and S2 counters appropriately
- * @param _num_threads the number of OpenMP threads
- */
-void Binner::setNumThreads(int num_threads) {
-	_num_threads = num_threads;
-	return;
-}
-
-
-/**
  * Set the type of subclass of Binner
  * @param type the type of Binner (FLUX, CAPTURE, ABSORPTION, etc)
  */
@@ -455,22 +343,10 @@ void Binner::setBinEdges(float* edges, int num_bins) {
 
 	/* Set all tallies to zero by default */
 	_tallies = new double[num_bins];
-	_tallies_squared = new double[num_bins];
-	_tally_acc = new double[num_bins*_num_threads];
-
-	/* Allocate memory for history-based bin statistics */
-	_bin_mu = new double[_num_bins];
-	_bin_variance = new double[_num_bins];
-	_bin_std_dev = new double[_num_bins];
-	_bin_rel_err = new double[_num_bins];
 
 	/* Loop over tallies and set to zero */
-	for (int i=0; i < _num_bins; i++) {
+	for (int i=0; i < _num_bins; i++)
 		_tallies[i] = 0.0;
-		_tallies_squared[i] = 0.0;
-		for (int j=0; j < _num_threads; j++)
-			_tally_acc[i*_num_threads+j] = 0.0;
-	}
 
 	/* Create an array of the center values between bins */
 	generateBinCenters();
@@ -506,22 +382,10 @@ void Binner::generateBinEdges(float start, float end, int num_bins,
 
 	/* Allocate memory for tallies */
 	_tallies = new double[num_bins];
-	_tallies_squared = new double[num_bins];
-	_tally_acc = new double[num_bins*_num_threads];
-
-	/* Allocate memory for history-based bin statistics */
-	_bin_mu = new double[_num_bins];
-	_bin_variance = new double[_num_bins];
-	_bin_std_dev = new double[_num_bins];
-	_bin_rel_err = new double[_num_bins];
 
 	/* Set all tallies to zero by default */
-	for (int i=0; i < num_bins; i++) {
+	for (int i=0; i < num_bins; i++)
 		_tallies[i] = 0;
-		_tallies_squared[i] = 0.0;
-		for (int j=0; j < _num_threads; j++)
-			_tally_acc[i*_num_threads+j] = 0.0;
-	}
 
 	/* Equal spacing between bins */
 	if (type == LINEAR) {
@@ -575,30 +439,7 @@ void Binner::generateBinCenters() {
  * @param samples array of samples to tally
  * @param thread_num the thread number making this tally
  */
-void Binner::tally(int thread_num, neutron* neutron) {
-
-	if (_num_bins == 0)
-		 log_printf(ERROR, "Cannot tally sample in Binner %s since "
-				 "the bins have not yet been created", _name);
-
-	int bin_index = getBinIndex(neutron);
-
-	if (bin_index >= 0 && bin_index < _num_bins) {
-		omp_set_lock(&_lock);
-		_tally_acc[bin_index*_num_threads+thread_num]++;
-		omp_unset_lock(&_lock);
-	}
-
-	return;
-}
-
-
-/**
- * Tallies unity for a sample
- * @param samples array of samples to tally
- * @param thread_num the thread number making this tally
- */
-void Binner::tally(int thread_num, float sample) {
+void Binner::tally(float sample) {
 
 	if (_num_bins == 0)
 		 log_printf(ERROR, "Cannot tally sample in Binner %s since "
@@ -608,90 +449,9 @@ void Binner::tally(int thread_num, float sample) {
 
 	if (bin_index >= 0 && bin_index < _num_bins) {
 		omp_set_lock(&_lock);
-		_tally_acc[bin_index*_num_threads+thread_num]++;
+		_tallies[bin_index]++;
 		omp_unset_lock(&_lock);
 	}
-
-	return;
-}
-
-
-/**
- * This method processes all of the tally accumulators for each bin
- * and adds each accumulator, and each accumulator squared, to the
- * tallies and tallies squared. This is akin to the S1 and S2 counters
- * dicussed in 22.106. At the end, the tally accumulators are reset to 0
- */
-void Binner::processTallyAccumulators() {
-
-	/* Loop over all bins */
-	for (int i=0; i < _num_bins; i++) {
-
-		/* Loop over all threads */
-		for (int j=0; j < _num_threads; j++) {
-			_tallies[i] += _tally_acc[i*_num_threads+j];
-			_tallies_squared[i] += (_tally_acc[i*_num_threads+j] *
-									_tally_acc[i*_num_threads+j]);
-			_tally_acc[i*_num_threads+j] = 0.0;
-		}
-	}
-
-	return;
-}
-
-
-void Binner::computeScaledHistoryStatistics(float factor) {
-
-	if (_num_bins == 0)
-		log_printf(ERROR, "Cannot compute bin statistics for Binner %s"
-				" since the bins have not yet been generated", _name);
-
-	/* Loop over each bin */
-	for (int i=0; i < _num_bins; i++) {
-		_bin_mu[i] = _tallies[i] / double(factor);
-		_bin_variance[i] = (1.0 / (double(factor) - 1.0)) *
-						((_tallies_squared[i] / double(factor))
-									- (_bin_mu[i]*_bin_mu[i]));
-		_bin_std_dev[i] = sqrt(_bin_variance[i]);
-		_bin_rel_err[i] = _bin_std_dev[i] / _bin_mu[i];
-	}
-
-	_statistics_compute = true;
-
-	return;
-}
-
-
-/**
- * Outputs the bin statistics (if they have been computed) to an
- * ASCII file
- * @param filename the output filename
- */
-void Binner::outputHistoryStatistics(const char* filename) {
-
-	if (_num_bins == 0)
-		log_printf(ERROR, "Cannot output bin statistics for Binner %s "
-				"since the bins have not yet been generated", _name);
-
-	else if (!_statistics_compute)
-		log_printf(ERROR, "Cannot output bin statistics for Binner %s "
-				"since they have not yet been computed", _name);
-
-	/* Create output file */
-	FILE* output_file;
-	output_file = fopen(filename, "w");
-
-	/* Print header to output file */
-	fprintf(output_file, "Bin center, Mu, Variance, Std Dev, Rel Err\n");
-
-	/* Loop over each bin and print mu, var, std dev and rel err */
-	for (int i=0; i < _num_bins; i++) {
-		fprintf(output_file, "%1.10f, %1.10f, %1.10f, %1.10f, %1.10f\n",
-				_centers[i], _bin_mu[i], _bin_variance[i], _bin_std_dev[i],
-														_bin_rel_err[i]);
-	}
-
-	fclose(output_file);
 
 	return;
 }
@@ -716,12 +476,10 @@ void FluxBinner::weightedTally(neutron* neutron, float sigma_t,
 				 "the bins have not yet been created", _name);
 
 	int bin_index = getBinIndex(neutron);
-	int thread_num = neutron->_thread_num;
 
 	if (bin_index >= 0 && bin_index < _num_bins) {
 		omp_set_lock(&_lock);
-		_tally_acc[bin_index*_num_threads+thread_num] += neutron->_weight /
-																sigma_t;
+		_tallies[bin_index] += neutron->_weight / sigma_t;
 		omp_unset_lock(&_lock);
 	}
 
@@ -749,17 +507,16 @@ void CaptureRateBinner::weightedTally(neutron* neutron, float sigma_t,
 				 "the bins have not yet been created", _name);
 
 	int bin_index = getBinIndex(neutron);
-	int thread_num = neutron->_thread_num;
 
 	if (bin_index >= 0 && bin_index < _num_bins) {
 		omp_set_lock(&_lock);
 		if (strcmp(_isotopes, "all"))
-			_tally_acc[bin_index*_num_threads+thread_num] +=
-					material->getCaptureMacroXS(energy_index) / sigma_t;
+			_tallies[bin_index] += material->getCaptureMacroXS(energy_index)
+																/ sigma_t;
 		else
-			_tally_acc[bin_index*_num_threads+thread_num] +=
-			material->getIsotope(_isotopes)->getCaptureXS(energy_index) /
-																sigma_t;
+			_tallies[bin_index] +=
+				material->getIsotope(_isotopes)->getCaptureXS(energy_index) /
+																	sigma_t;
 		omp_unset_lock(&_lock);
 	}
 
@@ -786,17 +543,16 @@ void AbsorptionRateBinner::weightedTally(neutron* neutron, float sigma_t,
 				 "the bins have not yet been created", _name);
 
 	int bin_index = getBinIndex(neutron);
-	int thread_num = neutron->_thread_num;
 
 	if (bin_index >= 0 && bin_index < _num_bins) {
 		omp_set_lock(&_lock);
 		if (strcmp(_isotopes, "all"))
-			_tally_acc[bin_index*_num_threads+thread_num] +=
+			_tallies[bin_index] +=
 					material->getAbsorbMacroXS(energy_index) / sigma_t;
 		else
-			_tally_acc[bin_index*_num_threads+thread_num] +=
-			material->getIsotope(_isotopes)->getAbsorbXS(energy_index) /
-																sigma_t;
+			_tallies[bin_index] +=
+				material->getIsotope(_isotopes)->getAbsorbXS(energy_index) /
+																	sigma_t;
 		omp_unset_lock(&_lock);
 	}
 
@@ -823,17 +579,16 @@ void ElasticRateBinner::weightedTally(neutron* neutron, float sigma_t,
 				 "the bins have not yet been created", _name);
 
 	int bin_index = getBinIndex(neutron);
-	int thread_num = neutron->_thread_num;
 
 	if (bin_index >= 0 && bin_index < _num_bins) {
 		omp_set_lock(&_lock);
 		if (strcmp(_isotopes, "all"))
-			_tally_acc[bin_index*_num_threads+thread_num] +=
+			_tallies[bin_index] +=
 					material->getElasticMacroXS(energy_index) / sigma_t;
 		else
-			_tally_acc[bin_index*_num_threads+thread_num] +=
-			material->getIsotope(_isotopes)->getElasticXS(energy_index) /
-																sigma_t;
+			_tallies[bin_index] +=
+				material->getIsotope(_isotopes)->getElasticXS(energy_index) /
+																	sigma_t;
 		omp_unset_lock(&_lock);
 	}
 
@@ -859,17 +614,16 @@ void InelasticRateBinner::weightedTally(neutron* neutron, float sigma_t,
 				 "the bins have not yet been created", _name);
 
 	int bin_index = getBinIndex(neutron);
-	int thread_num = neutron->_thread_num;
 
 	if (bin_index >= 0 && bin_index < _num_bins) {
 		omp_set_lock(&_lock);
 		if (strcmp(_isotopes, "all"))
-			_tally_acc[bin_index*_num_threads+thread_num] +=
+			_tallies[bin_index] +=
 					material->getInelasticMacroXS(energy_index) / sigma_t;
 		else
-			_tally_acc[bin_index*_num_threads+thread_num] +=
-			material->getIsotope(_isotopes)->getInelasticXS(energy_index) /
-																sigma_t;
+			_tallies[bin_index] +=
+				material->getIsotope(_isotopes)->getInelasticXS(energy_index) /
+																	sigma_t;
 		omp_unset_lock(&_lock);
 	}
 
@@ -895,17 +649,16 @@ void FissionRateBinner::weightedTally(neutron* neutron, float sigma_t,
 				 "the bins have not yet been created", _name);
 
 	int bin_index = getBinIndex(neutron);
-	int thread_num = neutron->_thread_num;
 
 	if (bin_index >= 0 && bin_index < _num_bins) {
 		omp_set_lock(&_lock);
 		if (strcmp(_isotopes, "all"))
-			_tally_acc[bin_index*_num_threads+thread_num] +=
+			_tallies[bin_index] +=
 					material->getFissionMacroXS(energy_index) / sigma_t;
 		else
-			_tally_acc[bin_index*_num_threads+thread_num] +=
-			material->getIsotope(_isotopes)->getFissionXS(energy_index) /
-																sigma_t;
+			_tallies[bin_index] +=
+				material->getIsotope(_isotopes)->getFissionXS(energy_index) /
+																	sigma_t;
 		omp_unset_lock(&_lock);
 	}
 
@@ -924,24 +677,23 @@ TransportRateBinner::TransportRateBinner() {
 TransportRateBinner::~TransportRateBinner() { };
 
 void TransportRateBinner::weightedTally(neutron* neutron, float sigma_t,
-							int energy_index, Material* material, Isotope* isotope) {
+					int energy_index, Material* material, Isotope* isotope) {
 
 	if (_num_bins == 0)
 		 log_printf(ERROR, "Cannot tally weighted sample in Binner %s since "
 				 "the bins have not yet been created", _name);
 
 	int bin_index = getBinIndex(neutron);
-	int thread_num = neutron->_thread_num;
 
 	if (bin_index >= 0 && bin_index < _num_bins) {
 		omp_set_lock(&_lock);
 		if (strcmp(_isotopes, "all"))
-			_tally_acc[bin_index*_num_threads+thread_num] +=
-					material->getTransportMacroXS(energy_index) / sigma_t;
+			_tallies[bin_index] +=
+				material->getTransportMacroXS(energy_index) / sigma_t;
 		else
-			_tally_acc[bin_index*_num_threads+thread_num] +=
-			material->getIsotope(_isotopes)->getTransportXS(energy_index) /
-																sigma_t;
+			_tallies[bin_index] +=
+				material->getIsotope(_isotopes)->getTransportXS(energy_index) /
+																	sigma_t;
 		omp_unset_lock(&_lock);
 	}
 
@@ -967,12 +719,13 @@ void CollisionRateBinner::weightedTally(neutron* neutron, float sigma_t,
 				 "the bins have not yet been created", _name);
 
 	int bin_index = getBinIndex(neutron);
-	int thread_num = neutron->_thread_num;
+
+	log_printf(NORMAL, "Inside collision rate binner. bin index = %d. "
+			"tallying %f", bin_index, neutron->_weight);
 
 	if (bin_index >= 0 && bin_index < _num_bins) {
 		omp_set_lock(&_lock);
-			_tally_acc[bin_index*_num_threads+thread_num] +=
-													neutron->_weight;
+			_tallies[bin_index] += neutron->_weight;
 		omp_unset_lock(&_lock);
 	}
 
@@ -999,22 +752,19 @@ void DiffusionRateBinner::weightedTally(neutron* neutron, float sigma_t,
 				 "the bins have not yet been created", _name);
 
 	int bin_index = getBinIndex(neutron);
-	int thread_num = neutron->_thread_num;
 
 	if (bin_index >= 0 && bin_index < _num_bins) {
 		omp_set_lock(&_lock);
-		if (strcmp(_isotopes, "all")) {
-			_tally_acc[bin_index*_num_threads+thread_num] +=
-				neutron->_weight * 1.0 / (3.0 *
+		if (strcmp(_isotopes, "all"))
+			_tallies[bin_index] += neutron->_weight * 1.0 / (3.0 *
 					material->getTransportMacroXS(energy_index) * sigma_t);
-		}
 		else {
 			Isotope* isotope = material->getIsotope(_isotopes);
 			float num_density = material->getIsotopeNumDensity(_isotopes);
 			float isotope_sigma_tr =
 			isotope->getTransportXS(energy_index) * num_density * 1E-24;
-			_tally_acc[bin_index*_num_threads+thread_num] +=
-			neutron->_weight * 1.0 / (3.0 * isotope_sigma_tr * sigma_t);
+			_tallies[bin_index] +=
+				neutron->_weight * 1.0 / (3.0 * isotope_sigma_tr * sigma_t);
 		}
 		omp_unset_lock(&_lock);
 	}
