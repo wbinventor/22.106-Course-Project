@@ -1058,7 +1058,7 @@ void BaysoySubasi(Options* options, int num_neutrons, int num_batches,
 	mine_cylinder->setLeftRegion(&mine);
 	mine_cylinder->setRightRegion(&dirt);
 
-//	dirt.setInteriorRegion(&mine);
+	dirt.setInteriorRegion(&mine);
 
 	/* Set up simple detector region */
 	ZCircle* detector_top = new ZCircle();
@@ -1115,6 +1115,8 @@ void BaysoySubasi(Options* options, int num_neutrons, int num_batches,
 		float w_avg = options->getWeightAvg();
 		detector.useForcedCollision(w_low, w_avg);
 	}
+
+	log_printf(NORMAL, "detector forced collision = %d", options->useForcedCollision());
 
 
 	/* Loop over batches */

@@ -207,13 +207,13 @@ void Region::clearBinners() {
 }
 
 
-Surface* Region::computeMinSurfDist(neutron* neutron, float min_dist) {
+Surface* Region::computeMinSurfDist(neutron* neutron, float* min_dist) {
 
 //	log_printf(NORMAL, "Computing min surf dist for region %s. neutron x = %f, "
 //			"y = %f, z = %f", _region_name, neutron->_x, neutron->_y, neutron->_z);
 
 	/* Find distance to nearest wall along neutron's trajectory */
-	min_dist = std::numeric_limits<float>::infinity();
+	*min_dist = std::numeric_limits<float>::infinity();
 	float curr_dist = 0.0;;
 	Surface* nearest = NULL;
 
@@ -227,14 +227,14 @@ Surface* Region::computeMinSurfDist(neutron* neutron, float min_dist) {
 
 //		log_printf(NORMAL, "computed curr dist = %1.8f", curr_dist);
 
-		if (curr_dist < min_dist) {
+		if (curr_dist < *min_dist) {
 //			log_printf(NORMAL, "updated min dist");
-			min_dist = curr_dist;
+			*min_dist = curr_dist;
 			nearest = (*iter);
 		}
 	}
 
-//	log_printf(NORMAL, "Returning min dist = %f", min_dist);
+//	log_printf(NORMAL, "Returning min dist = %f", &min_dist);
 
 	return nearest;
 }
@@ -313,6 +313,52 @@ void Region::moveNeutrons() {
 												new_x, new_y, new_z);
 		}
 
+		/* Forced collision variance reduction */
+		if (_use_forced_collision) {
+
+			/* Find distance to nearest wall along neutron's trajectory */
+			nearest = computeMinSurfDist(curr, &min_dist);
+
+			/* Compute exponential term in forced collision prob dist */
+			float px = exp(-sigma_t * min_dist);
+
+			log_printf(NORMAL, "Applying forced collision with sigma_t = %f, min_dist = %f, px = %f to %s",
+									sigma_t, min_dist, px, neutronToString(curr).c_str());
+
+			/* Create a new uncollided neutron that hits next surface
+			 * in the region along the collided neutron's trajectory */
+			neutron* new_neutron = initializeNewNeutron();
+			new_neutron->_x = curr->_x;
+			new_neutron->_y = curr->_y;
+			new_neutron->_z = curr->_z;
+			new_neutron->_energy = curr->_energy;
+			new_neutron->_mu = curr->_mu;
+			new_neutron->_phi = curr->_phi;
+			new_neutron->_thread_num = curr->_thread_num;
+			new_neutron->_weight = curr->_weight * px;
+			new_neutron->_time = curr->_time;
+
+			/* Figure out which surface to put uncollided neutron on */
+			nearest->addNeutron(new_neutron);
+
+			log_printf(NORMAL, "Created new neutron: %s",
+										neutronToString(new_neutron).c_str());
+
+
+			/* Update collided neutron's properties */
+			path_length =  log(1.0 - float(rand()/RAND_MAX) *
+										(1.0 - px)) / sigma_t;
+			theta = acos(curr->_mu);
+
+			new_x = curr->_x + path_length *
+											cos(curr->_phi) * sin(theta);
+			new_y = curr->_y + path_length *
+											sin(curr->_phi) * sin(theta);
+			new_z = curr->_z + path_length * curr->_mu;
+
+			curr->_weight *= (1.0 - px);
+		}
+
 
 		/* The neutron collided within this region */
 		if (contains(new_x, new_y, new_z)) {
@@ -371,47 +417,6 @@ void Region::moveNeutrons() {
 				log_printf(DEBUG, "New weight = %f", curr->_weight);
 			}
 
-			/* Forced collision variance reduction */
-			else if (_use_forced_collision) {
-
-				log_printf(NORMAL, "Using forced collision");
-
-				log_printf(DEBUG, "Applying forced collision to neutron with "
-						"weight = %f", curr->_weight);
-
-				/* Find distance to nearest wall along neutron's trajectory */
-				nearest = computeMinSurfDist(curr, min_dist);
-
-				/* Compute exponential term in forced collision prob dist */
-				float px = exp(-sigma_t * min_dist);
-
-				/* Create a new uncollided neutron that hits next surface
-				 * in the region along the collided neutron's trajectory */
-				neutron* new_neutron = initializeNewNeutron();
-				new_neutron->_energy = curr->_energy;
-				new_neutron->_mu = curr->_mu;
-				new_neutron->_phi = curr->_phi;
-				new_neutron->_thread_num = curr->_thread_num;
-				new_neutron->_weight = curr->_weight * px;
-
-				/* Figure out which surface to put uncollided neutron on */
-				nearest->addNeutron(new_neutron);
-
-				/* Update collided neutron's properties */
-				path_length =  log(1.0 - float(rand()/RAND_MAX) *
-											(1.0 - px)) / sigma_t;
-				theta = acos(curr->_mu);
-
-				new_neutron->_x = curr->_x + path_length *
-												cos(curr->_phi) * sin(theta);
-				new_neutron->_y = curr->_y + path_length *
-												sin(curr->_phi) * sin(theta);
-				new_neutron->_z = curr->_z + path_length * curr->_mu;
-
-				curr->_weight *= (1.0 - px);
-
-				updateNeutronTime(new_neutron, path_length);
-			}
 
 			/******************************************************************
 			 ***********************  COLLISIONS  *****************************
@@ -582,11 +587,11 @@ void Region::moveNeutrons() {
 
 			/* Check if this neutron is contained by an interior region */
 			if (inInteriorRegion(new_x, new_y, new_z))
-				nearest = _interior_region->computeMinSurfDist(curr, min_dist);
+				nearest = _interior_region->computeMinSurfDist(curr, &min_dist);
 
 			/* Find distance to nearest wall along neutron's trajectory */
 			else
-				nearest = computeMinSurfDist(curr, min_dist);
+				nearest = computeMinSurfDist(curr, &min_dist);
 
 			updateNeutronTime(curr, min_dist);
 

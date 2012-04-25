@@ -94,7 +94,7 @@ public:
 
     bool playRussianRoulette(neutron* neutron);
     void clearBinners();
-    Surface* computeMinSurfDist(neutron* neutron, float min_dist);
+    Surface* computeMinSurfDist(neutron* neutron, float* min_dist);
     bool inInteriorRegion(float x, float y, float z);
     void moveNeutrons();
 
