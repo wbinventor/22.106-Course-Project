@@ -53,6 +53,9 @@ typedef enum tallyDomainTypes {
 	X,
 	Y,
 	Z,
+	R_X,
+	R_Y,
+	R_Z,
 	ENERGY,
 	TIME
 } tallyDomainType;
@@ -68,7 +71,7 @@ protected:
 	char* _name;
 	int _num_bins;
 	float* _edges;
-	double* _centers;
+	float* _centers;
 	double* _tallies;
 
 	float _bin_delta;
@@ -88,7 +91,7 @@ public:
 	tallyDomainType getTallyDomainType();
 	int getNumBins();
 	float* getBinEdges();
-	double* getBinCenters();
+	float* getBinCenters();
 	float getBinDelta();
 	float getBinDelta(neutron* neutron);
 	double* getTallies();

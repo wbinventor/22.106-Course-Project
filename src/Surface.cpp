@@ -1080,9 +1080,12 @@ void Sphere::addNeutron(neutron* neutron) {
 	float discr = b*b - 4*a*c;
 
 	/* There is not an intersection point */
-	if (discr < 0)
+	if (discr < 0) {
 		log_printf(NORMAL, "Cannot add neutron to sphere since its "
 				"trajectory does not intersect the surface");
+		delete neutron;
+	}
+
 
 	/* There is one intersection point */
 	else if (discr == 0) {
@@ -1097,10 +1100,14 @@ void Sphere::addNeutron(neutron* neutron) {
 			neutron->_x = new_x;
 			neutron->_y = new_y;
 			neutron->_z = new_z;
+			_neutrons.push_back(neutron);
 		}
-		else
+		else {
 			log_printf(NORMAL, "Cannot add neutron to sphere since its "
 					"trajectory does not intersect the surface");
+			delete neutron;
+		}
+
 	}
 
 	/* There are two intersection points */
@@ -1139,15 +1146,17 @@ void Sphere::addNeutron(neutron* neutron) {
 			neutron->_x = new_x1;
 			neutron->_y = new_y1;
 			neutron->_z = new_z1;
+			_neutrons.push_back(neutron);
 		}
 		else {
 			neutron->_x = new_x2;
 			neutron->_y = new_y2;
 			neutron->_z = new_z2;
+			_neutrons.push_back(neutron);
 		}
 	}
 
-	_neutrons.push_back(neutron);
+	return;
 }
 
 
@@ -1402,21 +1411,85 @@ void OpenXCylinder::setXRight(float x_right) {
 
 void OpenXCylinder::addNeutron(neutron* neutron) {
 
-	/* Compute intersetion point of neutron with OpenXCylinder */
-	float dist = computeDistance(neutron);
-
+	/* Set dist to infinity to begin with */
+	float x = neutron->_x;
+	float y = neutron->_y;
+	float z = neutron->_z;
 	float vx = cos(neutron->_phi) * sin(acos(neutron->_mu));
 	float vy = sin(neutron->_phi) * sin(acos(neutron->_mu));
 	float vz = neutron->_mu;
 
-	float t = dist / sqrt(vx*vx + vy*vy + vz*vz);
+	double a = vz*vz + vy*vy;
+	double b = 2.0*z*vz - 2.0*_z0*vz + 2.0*y*vy - 2.0*_y0*vy;
+	double c = z*z + _z0*_z0 - 2.0*_z0*z + y*y + _y0*_y0 - 2.0*_y0*y - _r_squared;
 
-	/* Update neutron's position to the intersection point */
-	neutron->_x += vx*t;
-	neutron->_y += vy*t;
-	neutron->_z += vz*t;
+	double discr = b*b - 4.0*a*c;
 
-	_neutrons.push_back(neutron);
+	/* There is not an intersection point */
+	if (discr < 0) {
+		log_printf(WARNING, "Cannot add neutron to sphere since its "
+				"trajectory does not intersect the surface");
+		delete neutron;
+	}
+
+	/* There is one intersection point */
+	else if (discr == 0) {
+		float t = -b / (2.0*a);
+		float new_x = x + vx*t;
+		if (t >= 0 && new_x >= _x_left && new_x <= _x_right) {
+			neutron->_x = new_x;
+			neutron->_y += vy*t;
+			neutron->_z += vz*t;
+			_neutrons.push_back(neutron);
+		}
+		else {
+			log_printf(WARNING, "Cannot add neutron to sphere since its "
+					"trajectory does not intersect the surface");
+			delete neutron;
+		}
+	}
+
+	/* There are two intersection points */
+	else {
+		double t1 = (-b + sqrt(discr)) / (2.0*a);
+		double t2 = (-b - sqrt(discr)) / (2.0*a);
+		float new_x1 = x + vx*t1;
+		float new_x2 = x + vx*t2;
+		float new_y1, new_z1, new_y2, new_z2;
+		float test_dist1 = std::numeric_limits<float>::infinity();
+		float test_dist2 = std::numeric_limits<float>::infinity();
+
+		if (t1 >= 0 && new_x1 >= _x_left && new_x1 <= _x_right) {
+			new_z1 = z + vz*t1;
+			new_y1 = y + vy*t1;
+			test_dist1 = sqrt((new_y1 - y)*(new_y1 - y) +
+						(new_z1 - z)*(new_z1 - z) +
+						(new_x1 - x)*(new_x1 - x));
+		}
+
+		if (t2 >= 0 && new_x2 >= _x_left && new_x2 <= _x_right) {
+			new_z2 = z + vz*t2;
+			new_y2 = y + vy*t2;
+			test_dist2 = sqrt((new_y2 - y)*(new_y2 - y) +
+						(new_z2- z)*(new_z2 - z) +
+						(new_x2 - x)*(new_x2 - x));
+		}
+
+		if (test_dist1 < test_dist2) {
+			neutron->_x += vx*t1;
+			neutron->_y += vy*t1;
+			neutron->_z += vz*t1;
+			_neutrons.push_back(neutron);
+		}
+		else {
+			neutron->_x += vx*t2;
+			neutron->_y += vy*t2;
+			neutron->_z += vz*t2;
+			_neutrons.push_back(neutron);
+		}
+	}
+
+	return;
 }
 
 
@@ -1475,8 +1548,8 @@ float OpenXCylinder::computeDistance(neutron* neutron) {
 		}
 
 		if (t2 >= 0 && new_x2 >= _x_left && new_x2 <= _x_right) {
-			float new_z = z + vz*t2;
-			float new_y = y + vy*t2;
+			new_z = z + vz*t2;
+			new_y = y + vy*t2;
 			test_dist2 = sqrt((new_y - y)*(new_y - y) +
 						(new_z- z)*(new_z - z) +
 						(new_x2 - x)*(new_x2 - x));
@@ -1524,7 +1597,7 @@ bool OpenXCylinder::onSurface(float x, float y, float z) {
 
 
 void OpenXCylinder::moveNeutrons() {
-	log_printf(DEBUG, "Inside OpenXCylinder moveNeutrons method");
+	log_printf(DEBUG, "Inside OpenXCylinder moveNeutrons method for y0 = %f", _y0);
 
 	neutron* curr;
 
@@ -1555,6 +1628,8 @@ void OpenXCylinder::moveNeutrons() {
 
 			float new_r_squared = (curr->_y - _y0)*(curr->_y - _y0) +
 									(curr->_z - _z0)*(curr->_z - _z0);
+
+			log_printf(DEBUG, "new_r_squared = %f, _r_squared = %f", new_r_squared, _r_squared);
 
 			/* Figure out which region to put neutron in */
 			if (new_r_squared < _r_squared)
@@ -1599,21 +1674,85 @@ void OpenYCylinder::setYRight(float y_right) {
 
 void OpenYCylinder::addNeutron(neutron* neutron) {
 
-	/* Compute intersetion point of neutron with OpenYCylinder */
-	float dist = computeDistance(neutron);
-
+	/* Set dist to infinity to begin with */
+	float x = neutron->_x;
+	float y = neutron->_y;
+	float z = neutron->_z;
 	float vx = cos(neutron->_phi) * sin(acos(neutron->_mu));
 	float vy = sin(neutron->_phi) * sin(acos(neutron->_mu));
 	float vz = neutron->_mu;
 
-	float t = dist / sqrt(vx*vx + vy*vy + vz*vz);
+	float a = vx*vx + vz*vz;
+	float b = 2.0*x*vx - 2.0*_x0*vx + 2.0*z*vz - 2.0*_z0*vz;
+	float c = x*x + _x0*_x0 - 2.0*_x0*x + z*z + _z0*_z0 - 2.0*_z0*z - _r_squared;
 
-	/* Update neutron's position to the intersection point */
-	neutron->_x += vx*t;
-	neutron->_y += vy*t;
-	neutron->_z += vz*t;
+	float discr = b*b - 4.0*a*c;
 
-	_neutrons.push_back(neutron);
+	/* There is not an intersection point */
+	if (discr < 0) {
+		log_printf(WARNING, "Cannot add neutron to sphere since its "
+				"trajectory does not intersect the surface");
+		delete neutron;
+	}
+
+	/* There is one intersection point */
+	else if (discr == 0) {
+		float t = -b / (2.0*a);
+		float new_y = y + vy*t;
+		if (t >= 0 && new_y >= _y_left && new_y <= _y_right) {
+			neutron->_x += vx*t;
+			neutron->_y = new_y;
+			neutron->_z += vz*t;
+			_neutrons.push_back(neutron);
+		}
+		else {
+			log_printf(WARNING, "Cannot add neutron to sphere since its "
+					"trajectory does not intersect the surface");
+			delete neutron;
+		}
+	}
+
+	/* There are two intersection points */
+	else {
+		float t1 = (-b + sqrt(discr)) / (2.0*a);
+		float t2 = (-b - sqrt(discr)) / (2.0*a);
+		float new_y1 = y + vy*t1;
+		float new_y2 = y + vy*t2;
+		float new_x1, new_z1, new_x2, new_z2;
+		float test_dist1 = std::numeric_limits<float>::infinity();
+		float test_dist2 = std::numeric_limits<float>::infinity();
+
+		if (t1 >= 0 && new_y1 >= _y_left && new_y1 <= _y_right) {
+			new_z1 = z + vz*t1;
+			new_x1 = x + vx*t1;
+			test_dist1 = sqrt((new_x1 - x)*(new_x1 - x) +
+						(new_z1 - z)*(new_z1 - z) +
+						(new_y1 - y)*(new_y1 - y));
+		}
+
+		if (t2 >= 0 && new_y2 >= _y_left && new_y2 <= _y_right) {
+			new_z2 = z + vz*t2;
+			new_x2 = x + vx*t2;
+			test_dist2 = sqrt((new_x2 - x)*(new_x2 - x) +
+						(new_z2- z)*(new_z2 - z) +
+						(new_y2 - y)*(new_y2 - y));
+		}
+
+		if (test_dist1 < test_dist2) {
+			neutron->_x += vx*t1;
+			neutron->_y += vy*t1;
+			neutron->_z += vz*t1;
+			_neutrons.push_back(neutron);
+		}
+		else {
+			neutron->_x += vx*t2;
+			neutron->_y += vy*t2;
+			neutron->_z += vz*t2;
+			_neutrons.push_back(neutron);
+		}
+	}
+
+	return;
 }
 
 
@@ -1672,8 +1811,8 @@ float OpenYCylinder::computeDistance(neutron* neutron) {
 		}
 
 		if (t2 >= 0 && new_y2 >= _y_left && new_y2 <= _y_right) {
-			float new_z = z + vz*t2;
-			float new_x = x + vx*t2;
+			new_z = z + vz*t2;
+			new_x = x + vx*t2;
 			test_dist2 = sqrt((new_x - x)*(new_x - x) +
 						(new_z- z)*(new_z - z) +
 						(new_y2 - y)*(new_y2 - y));
@@ -1796,21 +1935,84 @@ void OpenZCylinder::setZRight(float z_right) {
 
 void OpenZCylinder::addNeutron(neutron* neutron) {
 
-	/* Compute intersetion point of neutron with OpenZCylinder */
-	float dist = computeDistance(neutron);
-
+	/* Set dist to infinity to begin with */
+	float x = neutron->_x;
+	float y = neutron->_y;
+	float z = neutron->_z;
 	float vx = cos(neutron->_phi) * sin(acos(neutron->_mu));
 	float vy = sin(neutron->_phi) * sin(acos(neutron->_mu));
 	float vz = neutron->_mu;
 
-	float t = dist / sqrt(vx*vx + vy*vy + vz*vz);
+	float a = vx*vx + vy*vy;
+	float b = 2.0*x*vx - 2.0*_x0*vx + 2.0*y*vy - 2.0*_y0*vy;
+	float c = x*x + _x0*_x0 - 2.0*_x0*x + y*y + _y0*_y0 - 2.0*_y0*y - _r_squared;
 
-	/* Update neutron's position to the intersection point */
-	neutron->_x += vx*t;
-	neutron->_y += vy*t;
-	neutron->_z += vz*t;
+	float discr = b*b - 4.0*a*c;
 
-	_neutrons.push_back(neutron);
+	/* There is not an intersection point */
+	if (discr < 0) {
+		log_printf(WARNING, "Cannot add neutron to sphere since its "
+				"trajectory does not intersect the surface");
+		delete neutron;
+	}
+
+	/* There is one intersection point */
+	else if (discr == 0) {
+		float t = -b / (2.0*a);
+		float new_z = z + vz*t;
+		if (t >= 0 && new_z >= _z_left && new_z <= _z_right) {
+			neutron->_x += vx*t;
+			neutron->_y += vy*t;
+			neutron->_z = new_z;
+			_neutrons.push_back(neutron);
+		}
+		else {
+			log_printf(WARNING, "Cannot add neutron to sphere since its "
+					"trajectory does not intersect the surface");
+			delete neutron;
+		}
+	}
+
+	/* There are two intersection points */
+	else {
+		float t1 = (-b + sqrt(discr)) / (2.0*a);
+		float t2 = (-b - sqrt(discr)) / (2.0*a);
+		float new_z1 = z + vz*t1;
+		float new_z2 = z + vz*t2;
+		float new_x1, new_y1, new_x2, new_y2;
+		float test_dist1 = std::numeric_limits<float>::infinity();
+		float test_dist2 = std::numeric_limits<float>::infinity();
+
+		if (t1 >= 0 && new_z1 >= _z_left && new_z1 <= _z_right) {
+			new_y1 = y + vy*t1;
+			new_x1 = x + vx*t1;
+			test_dist1 = sqrt((new_x1 - x)*(new_x1 - x) +
+						(new_y1 - y)*(new_y1 - y) +
+						(new_z1 - z)*(new_z1 - z));
+		}
+
+		if (t2 >= 0 && new_z2 >= _z_left && new_z2 <= _z_right) {
+			new_y2 = y + vy*t2;
+			new_x2 = x + vx*t2;
+			test_dist2 = sqrt((new_x2 - x)*(new_x2 - x) +
+						(new_y2 - y)*(new_y2 - y) +
+						(new_z2 - z)*(new_z2 - z));
+		}
+
+		if (test_dist1 < test_dist2) {
+			neutron->_x += vx*t1;
+			neutron->_y += vy*t1;
+			neutron->_z += vz*t1;
+			_neutrons.push_back(neutron);
+		}
+		else {
+			neutron->_x += vx*t2;
+			neutron->_y += vy*t2;
+			neutron->_z += vz*t2;
+			_neutrons.push_back(neutron);
+		}
+	}
+	return;
 }
 
 

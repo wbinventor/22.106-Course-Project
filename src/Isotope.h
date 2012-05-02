@@ -177,7 +177,6 @@ public:
     										collisionType type, ...);
     void plotThermalScatteringDistributions();
     void plotThermalScatteringCDFs();
-    void plotSampledThermalScatteringEnergies(float energy, int num_samples);
 };
 
 #endif /* ISOTOPE_H_ */

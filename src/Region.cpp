@@ -27,7 +27,7 @@ Region::Region() {
 	_weight_low = 0.0;
 	_weight_avg = 0.0;
 
-	_interior_region = NULL;
+//	_interior_region = NULL;
 }
 
 
@@ -111,12 +111,21 @@ void Region::addBinner(Binner* bins) {
 }
 
 
+///**
+// * Adds a new region that is contained by this region
+// * @param region a Region contained by this Region
+// */
+//void Region::setInteriorRegion(Region* region) {
+//	_interior_region = region;
+//}
+
+
 /**
  * Adds a new region that is contained by this region
  * @param region a Region contained by this Region
  */
-void Region::setInteriorRegion(Region* region) {
-	_interior_region = region;
+void Region::addInteriorRegion(Region* region) {
+	_interior_regions.push_back(region);
 }
 
 
@@ -216,21 +225,37 @@ Surface* Region::computeMinSurfDist(neutron* neutron, float* min_dist) {
 	*min_dist = std::numeric_limits<float>::infinity();
 	float curr_dist = 0.0;;
 	Surface* nearest = NULL;
+	Surface* interior_region_test = NULL;
 
 	/* Loop over all bordering surfaces */
-	std::vector<Surface*>::iterator iter;
+	std::vector<Surface*>::iterator iter1;
+	std::vector<Region*>::iterator iter2;
 
-	for (iter = _boundaries.begin(); iter != _boundaries.end(); ++iter) {
+	for (iter1 = _boundaries.begin(); iter1 != _boundaries.end(); ++iter1) {
 
 		/* Compute distance to this Surface */
-		curr_dist = (*iter)->computeDistance(neutron);
+		curr_dist = (*iter1)->computeDistance(neutron);
 
 //		log_printf(NORMAL, "computed curr dist = %1.8f", curr_dist);
 
 		if (curr_dist < *min_dist) {
 //			log_printf(NORMAL, "updated min dist");
 			*min_dist = curr_dist;
-			nearest = (*iter);
+			nearest = (*iter1);
+		}
+	}
+
+	for (iter2 = _interior_regions.begin(); iter2 != _interior_regions.end(); ++iter2) {
+
+		/* Compute distance to this Surface */
+		interior_region_test = (*iter2)->computeMinSurfDist(neutron, &curr_dist);
+
+//		log_printf(NORMAL, "computed curr dist = %1.8f", curr_dist);
+
+		if (curr_dist < *min_dist) {
+//			log_printf(NORMAL, "updated min dist");
+			*min_dist = curr_dist;
+			nearest = interior_region_test;
 		}
 	}
 
@@ -240,15 +265,39 @@ Surface* Region::computeMinSurfDist(neutron* neutron, float* min_dist) {
 }
 
 
+//bool Region::inInteriorRegion(float x, float y, float z) {
+//
+//	if (_interior_region == NULL)
+//		return false;
+//	else if (_interior_region->contains(x, y, z))
+//		return true;
+//	else
+//		return false;
+//}
+
 bool Region::inInteriorRegion(float x, float y, float z) {
 
-	if (_interior_region == NULL)
+//	log_printf(NORMAL, "Inside inInteriorRegion method for reigon %s", _region_name);
+
+	if (_interior_regions.empty())
 		return false;
-	else if (_interior_region->contains(x, y, z))
-		return true;
-	else
+
+	else {
+		std::vector<Region*>::iterator iter;
+
+		for (iter = _interior_regions.begin(); iter != _interior_regions.end(); ++iter) {
+			if ((*iter)->contains(x, y, z)) {
+//				log_printf(NORMAL, "returning true for region %s",
+//						(*iter)->getRegionName());
+				return true;
+			}
+		}
+
+//		log_printf(NORMAL, "returning false");
 		return false;
+	}
 }
+
 
 
 void Region::moveNeutrons() {
@@ -285,7 +334,7 @@ void Region::moveNeutrons() {
 										_region_name, _neutrons.size());
 
 		if (strcmp("detector", _region_name) == 0)
-			log_printf(NORMAL, "Moving neutron inside of detector");
+			log_printf(DEBUG, "Moving neutron inside of detector");
 
 		curr = (*iter1);
 
@@ -308,7 +357,7 @@ void Region::moveNeutrons() {
 											new_x, new_y, new_z);
 
 		if (strcmp("detector", _region_name) == 0) {
-			log_printf(NORMAL, "sigma_t = %f, path_length = %f, new_x = %f, "
+			log_printf(DEBUG, "sigma_t = %f, path_length = %f, new_x = %f, "
 					"new_y = %f, new_z = %f", sigma_t, path_length,
 												new_x, new_y, new_z);
 		}
@@ -319,44 +368,48 @@ void Region::moveNeutrons() {
 			/* Find distance to nearest wall along neutron's trajectory */
 			nearest = computeMinSurfDist(curr, &min_dist);
 
-			/* Compute exponential term in forced collision prob dist */
-			float px = exp(-sigma_t * min_dist);
+			if (nearest != NULL) {
 
-			log_printf(NORMAL, "Applying forced collision with sigma_t = %f, min_dist = %f, px = %f to %s",
-									sigma_t, min_dist, px, neutronToString(curr).c_str());
+				/* Compute exponential term in forced collision prob dist */
+				float px = exp(-sigma_t * min_dist);
 
-			/* Create a new uncollided neutron that hits next surface
-			 * in the region along the collided neutron's trajectory */
-			neutron* new_neutron = initializeNewNeutron();
-			new_neutron->_x = curr->_x;
-			new_neutron->_y = curr->_y;
-			new_neutron->_z = curr->_z;
-			new_neutron->_energy = curr->_energy;
-			new_neutron->_mu = curr->_mu;
-			new_neutron->_phi = curr->_phi;
-			new_neutron->_thread_num = curr->_thread_num;
-			new_neutron->_weight = curr->_weight * px;
-			new_neutron->_time = curr->_time;
+				log_printf(DEBUG, "Applying forced collision with sigma_t = %f, "
+						"min_dist = %f, px = %f to %s", sigma_t, min_dist, px,
+						neutronToString(curr).c_str());
 
-			/* Figure out which surface to put uncollided neutron on */
-			nearest->addNeutron(new_neutron);
+				/* Create a new uncollided neutron that hits next surface
+				 * in the region along the collided neutron's trajectory */
+				neutron* new_neutron = initializeNewNeutron();
+				new_neutron->_x = curr->_x;
+				new_neutron->_y = curr->_y;
+				new_neutron->_z = curr->_z;
+				new_neutron->_energy = curr->_energy;
+				new_neutron->_mu = curr->_mu;
+				new_neutron->_phi = curr->_phi;
+				new_neutron->_thread_num = curr->_thread_num;
+				new_neutron->_weight = curr->_weight * px;
+				new_neutron->_time = curr->_time;
 
-			log_printf(NORMAL, "Created new neutron: %s",
-										neutronToString(new_neutron).c_str());
+				/* Figure out which surface to put uncollided neutron on */
+				nearest->addNeutron(new_neutron);
+
+				log_printf(DEBUG, "Created new neutron: %s",
+											neutronToString(new_neutron).c_str());
 
 
-			/* Update collided neutron's properties */
-			path_length =  log(1.0 - float(rand()/RAND_MAX) *
-										(1.0 - px)) / sigma_t;
-			theta = acos(curr->_mu);
+				/* Update collided neutron's properties */
+				path_length =  log(1.0 - float(rand()/RAND_MAX) *
+											(1.0 - px)) / sigma_t;
+				theta = acos(curr->_mu);
 
-			new_x = curr->_x + path_length *
-											cos(curr->_phi) * sin(theta);
-			new_y = curr->_y + path_length *
-											sin(curr->_phi) * sin(theta);
-			new_z = curr->_z + path_length * curr->_mu;
+				new_x = curr->_x + path_length *
+												cos(curr->_phi) * sin(theta);
+				new_y = curr->_y + path_length *
+												sin(curr->_phi) * sin(theta);
+				new_z = curr->_z + path_length * curr->_mu;
 
-			curr->_weight *= (1.0 - px);
+				curr->_weight *= (1.0 - px);
+			}
 		}
 
 
@@ -527,7 +580,7 @@ void Region::moveNeutrons() {
 				log_printf(DEBUG, "Elastic scatter type collision");
 
 				float phi = (float(rand()) / RAND_MAX) * 2.0 * M_PI;
-				curr->_phi = phi;
+//				curr->_phi = phi;
 
 				/* Isotropic in lab */
 				if (isotope->getElasticAngleType() == ISOTROPIC_LAB) {
@@ -551,16 +604,62 @@ void Region::moveNeutrons() {
 					float mu_cm = (float(rand()) / RAND_MAX) * 2.0 - 1.0;
 					int A = isotope->getA();
 					float mu_l = (1.0 + A*mu_cm)/(sqrt(A*A + 2*A*mu_cm + 1.0));
-					curr->_mu = curr->_mu * mu_l +
-							sqrt(1.0 - curr->_mu * curr->_mu) *
-							sqrt(1.0 - mu_l * mu_l) * sin(phi);
 
-					if (curr->_energy < 4 && isotope->usesThermalScattering())
-						curr->_energy =
-						isotope->getThermalScatteringEnergy(curr->_energy);
-					else
-						curr->_energy *= (A*A + 2*A*mu_cm + 1.0) /
-															((A+1.0)*(A+1.0));
+					float theta = acos(curr->_mu);
+					float u = cos(curr->_phi) * sin(theta);
+					float v = sin(curr->_phi) * sin(theta);
+					float w = curr->_mu;
+
+					float uprime = mu_l*u + sqrt(1.0 - mu_l*mu_l) * (u*w*cos(phi) -
+										v*sin(phi)) / sqrt(1.0 - w*w);
+					float vprime = mu_l*v + sqrt(1.0 - mu_l*mu_l) * (v*w*cos(phi) +
+										u*sin(phi)) / sqrt(1.0 - w*w);
+					float wprime = mu_l*w + sqrt(1.0 - mu_l*mu_l) *
+														sqrt(1.0 - w*w) * cos(phi);
+
+//					log_printf(NORMAL, "u = %f, v = %f, w = %f", u, v, w);
+//
+//					log_printf(NORMAL, "uprime = %f, vprime = %f, wprime = %f", uprime, vprime, wprime);
+
+
+					/* Update neutron properties */
+					curr->_energy *= (A*A + 2*A*mu_cm + 1.0) /
+														((A+1.0)*(A+1.0));
+					/* Error checking in case vprime and wprime were equal to inf or -inf */
+					if (fabs(1.0 - fabs(w)) < 1e-3) {
+						curr->_phi = phi;
+						curr->_mu = mu_l;
+					}
+					else {
+						curr->_mu = wprime / sqrt(uprime*uprime + vprime*vprime + wprime*wprime);
+						curr->_phi = acos(uprime / sqrt(uprime*uprime + vprime*vprime));
+
+						/* Error checking - acos function breaks down near -1 and 1 */
+						if (curr->_phi != curr->_phi && uprime > 0.0)
+							curr->_phi = 0.0;
+						else if (curr->_phi != curr->_phi && uprime <= 0.0)
+							curr->_phi = M_PI;
+						/* Error checking - if uprime < 0 then we need to change interval for acos */
+						else if (curr->_phi == curr->_phi && vprime < 0)
+							curr->_phi += M_PI;
+					}
+
+
+//					log_printf(NORMAL, "new energy = %f, mu = %f, phi = %f", curr->_energy, curr->_mu, curr->_phi);
+
+//					float mu_cm = (float(rand()) / RAND_MAX) * 2.0 - 1.0;
+//					int A = isotope->getA();
+//					float mu_l = (1.0 + A*mu_cm)/(sqrt(A*A + 2*A*mu_cm + 1.0));
+//					curr->_mu = curr->_mu * mu_l +
+//							sqrt(1.0 - curr->_mu * curr->_mu) *
+//							sqrt(1.0 - mu_l * mu_l) * sin(phi);
+//
+//					if (curr->_energy < 4 && isotope->usesThermalScattering())
+//						curr->_energy =
+//						isotope->getThermalScatteringEnergy(curr->_energy);
+//					else
+//						curr->_energy *= (A*A + 2*A*mu_cm + 1.0) /
+//															((A+1.0)*(A+1.0));
 				}
 
 				log_printf(DEBUG, "Updated mu= %f, phi = %f, energy = %f",
@@ -586,11 +685,11 @@ void Region::moveNeutrons() {
 		else {
 
 			/* Check if this neutron is contained by an interior region */
-			if (inInteriorRegion(new_x, new_y, new_z))
-				nearest = _interior_region->computeMinSurfDist(curr, &min_dist);
+//			if (inInteriorRegion(new_x, new_y, new_z))
+//				nearest = _interior_region->computeMinSurfDist(curr, &min_dist);
 
 			/* Find distance to nearest wall along neutron's trajectory */
-			else
+//			else
 				nearest = computeMinSurfDist(curr, &min_dist);
 
 			updateNeutronTime(curr, min_dist);

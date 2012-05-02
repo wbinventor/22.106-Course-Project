@@ -244,7 +244,7 @@ void BatchBinSet::createBinners(float* bin_edges, int num_bins,
  */
 void BatchBinSet::computeBatchStatistics() {
 
-	log_printf(NORMAL, "Computing batch statistics...");
+	log_printf(DEBUG, "Computing batch statistics...");
 
 	if (_num_batches == 0)
 		log_printf(ERROR, "Cannot compute batch statistics since the binners"
@@ -256,6 +256,9 @@ void BatchBinSet::computeBatchStatistics() {
 	/* Loop over each bin */
 	for (int i=0; i < _num_bins; i++) {
 
+		s1 = 0.0;
+		s2 = 0.0;
+
 		/* Initialize statistics to zero */
 		_batch_mu[i] = 0.0;
 		_batch_variance[i] = 0.0;
@@ -266,42 +269,21 @@ void BatchBinSet::computeBatchStatistics() {
 		for (int j=0; j < _num_batches; j++) {
 			s1 += _binners[j].getTally(i);
 			s2 += _binners[j].getTally(i) * _binners[j].getTally(i);
-			log_printf(NORMAL, "j = %d, s1 = %f, s2 = %f", j, s1, s2);
 		}
 
 		/* Compute batch average */
 		_batch_mu[i] = s1 / _num_batches;
 
-		log_printf(NORMAL, "Batch mu = %f", _batch_mu[i]);
 
 		/* Compute batch variance */
 		_batch_variance[i] = (1.0 / (float(_num_batches) - 1.0)) *
 				(s2 / float(_num_batches) - (_batch_mu[i]*_batch_mu[i]));
 
-		log_printf(NORMAL, "_batch_variance[i] = %f", _batch_variance[i]);
+		log_printf(DEBUG, "Batch mu = %f", _batch_mu[i]);
+		log_printf(DEBUG, "_batch_variance[i] = %f", _batch_variance[i]);
 
 		_batch_std_dev[i] = sqrt(_batch_variance[i]);
 		_batch_rel_err[i] = _batch_std_dev[i] / _batch_mu[i];
-
-//		/* Accumulate flux from each batch */
-//		for (int j=0; j < _num_batches; j++)
-//			_batch_mu[i] += _binners[j].getTally(i);
-//
-//		/* Compute average flux for this bin */
-//		_batch_mu[i] /= float(_num_batches);
-//
-//		/* Compute the variance for this bin */
-//		for (int j=0; j < _num_batches; j++) {
-//			_batch_variance[i] += (_binners[j].getTally(i) - _batch_mu[i])
-//					* (_binners[j].getTally(i) - _batch_mu[i]);
-//		}
-//		_batch_variance[i] /= float(_num_batches);
-//
-//		/* Compute the standard deviation for this bin */
-//		_batch_std_dev[i] = sqrt(_batch_variance[i]);
-//
-//		/* Compute the relative error for this bin */
-//		_batch_rel_err[i] = _batch_std_dev[i] / _batch_mu[i];
 	}
 
 	_statistics_compute = true;
@@ -328,6 +310,9 @@ void BatchBinSet::computeScaledBatchStatistics(float scale_factor) {
 	/* Loop over each bin */
 	for (int i=0; i < _num_bins; i++) {
 
+		s1 = 0.0;
+		s2 = 0.0;
+
 		/* Initialize statistics to zero */
 		_batch_mu[i] = 0.0;
 		_batch_variance[i] = 0.0;
@@ -348,29 +333,11 @@ void BatchBinSet::computeScaledBatchStatistics(float scale_factor) {
 		_batch_variance[i] = (1.0 / (float(_num_batches) - 1.0)) *
 				(s2 / float(_num_batches) - (_batch_mu[i]*_batch_mu[i]));
 
+		log_printf(DEBUG, "Batch mu = %f", _batch_mu[i]);
+		log_printf(DEBUG, "_batch_variance[i] = %10f", _batch_variance[i]);
+
 		_batch_std_dev[i] = sqrt(_batch_variance[i]);
 		_batch_rel_err[i] = _batch_std_dev[i] / _batch_mu[i];
-
-//		/* Accumulate flux from each batch */
-//		for (int j=0; j < _num_batches; j++)
-//			_batch_mu[i] += _binners[j].getTally(i) / scale_factor;
-//
-//		/* Compute average flux for this bin */
-//		_batch_mu[i] /= float(_num_batches);
-//
-//		/* Compute the variance for this bin */
-//		for (int j=0; j < _num_batches; j++) {
-//			_batch_variance[i] += (_binners[j].getTally(i) / scale_factor
-//			- _batch_mu[i]) * (_binners[j].getTally(i) / scale_factor
-//												- _batch_mu[i]);
-//		}
-//		_batch_variance[i] /= float(_num_batches);
-//
-//		/* Compute the standard deviation for this bin */
-//		_batch_std_dev[i] = sqrt(_batch_variance[i]);
-//
-//		/* Compute the relative error for this bin */
-//		_batch_rel_err[i] = _batch_std_dev[i] / _batch_mu[i];
 	}
 
 	_statistics_compute = true;
@@ -412,3 +379,28 @@ void BatchBinSet::outputBatchStatistics(const char* filename) {
 
 	return;
 }
+
+
+
+void BatchBinSet::plotBatchMu(const char* filename,
+					const char* xlabel, const char* ylabel) {
+
+	if (_num_batches == 0)
+		log_printf(ERROR, "Cannot plot batch mu since the binners"
+				" for this BatchBinSet have not yet been generated");
+
+	else if (!_statistics_compute)
+		log_printf(ERROR, "Cannot plot batch mu since is has not yet"
+				" not yet been computed for this BatchBinSet");
+
+	/* Plot the neutron flux */
+		gnuplot_ctrl* handle = gnuplot_init();
+		gnuplot_set_xlabel(handle, (char*)xlabel);
+		gnuplot_set_ylabel(handle, (char*)ylabel);
+		gnuplot_setstyle(handle, (char*)"dots");
+		gnuplot_saveplot(handle, (char*)filename);
+		gnuplot_plot_xy(handle, getBinner(0)->getBinCenters(),
+				_batch_mu, _num_bins, (char*)"Batch Mu");
+		gnuplot_close(handle);
+}
+

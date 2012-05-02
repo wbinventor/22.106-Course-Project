@@ -15,6 +15,7 @@
 #include <math.h>
 #include "Binner.h"
 #include "log.h"
+#include "gnuplot.h"
 
 
 /**
@@ -53,6 +54,8 @@ public:
 	void computeBatchStatistics();
 	void computeScaledBatchStatistics(float scale_factor);
 	void outputBatchStatistics(const char* filename);
+	void plotBatchMu(const char* filename, const char* xlabel,
+											const char* ylabel);
 };
 
 #endif /* BATCHBINSET_H_ */

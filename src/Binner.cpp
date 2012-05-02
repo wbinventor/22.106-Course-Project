@@ -110,7 +110,7 @@ float* Binner::getBinEdges() {
  * Returns a double array of bin center values
  * @return array of bin center values
  */
-double* Binner::getBinCenters() {
+float* Binner::getBinCenters() {
 	 if (_num_bins == 0)
 		 log_printf(ERROR, "Cannot return bin centers for Binner %s since the "
 				 "bins have not yet been created", _name);
@@ -202,12 +202,24 @@ int Binner::getBinIndex(neutron* neutron) {
 
 	float sample;
 
+//	if (_tally_domain_type == X)
+//		log_printf(NORMAL, "Binning %s", neutronToString(neutron).c_str());
+
 	if (_tally_domain_type == X)
 		sample = neutron->_x;
 	else if (_tally_domain_type == Y)
 		sample = neutron->_y;
 	else if (_tally_domain_type == Z)
 		sample = neutron->_z;
+	else if (_tally_domain_type == R_X)
+		sample = sqrt(neutron->_y * neutron->_y +
+					neutron->_z * neutron->_z);
+	else if (_tally_domain_type == R_Y)
+		sample = sqrt(neutron->_x * neutron->_x +
+					neutron->_z * neutron->_z);
+	else if (_tally_domain_type == R_Z)
+		sample = sqrt(neutron->_x * neutron->_x +
+					neutron->_y * neutron->_y);
 	else if (_tally_domain_type == TIME)
 		sample = neutron->_time;
 	else
@@ -238,9 +250,14 @@ int Binner::getBinIndex(neutron* neutron) {
 		}
 	}
 
+//	if (_tally_domain_type == X)
+//		log_printf(NORMAL, "_bin_delta = %f, index = %d", _bin_delta, index);
+
 	/* If this sample was not contained within a bin set index to infinity*/
 	if (index > _num_bins)
 		index = std::numeric_limits<float>::infinity();
+
+
 
 	return index;
 }
@@ -424,7 +441,7 @@ void Binner::generateBinCenters() {
 				 "the bins have not yet been created", _name);
 
 	/* Allocate memory for the bin centers array */
-	_centers = new double[_num_bins];
+	_centers = new float[_num_bins];
 
 	/* Loop over all bins and find the midpoint between edges */
 	for (int i=0; i < _num_bins; i++)
@@ -719,9 +736,6 @@ void CollisionRateBinner::weightedTally(neutron* neutron, float sigma_t,
 				 "the bins have not yet been created", _name);
 
 	int bin_index = getBinIndex(neutron);
-
-	log_printf(NORMAL, "Inside collision rate binner. bin index = %d. "
-			"tallying %f", bin_index, neutron->_weight);
 
 	if (bin_index >= 0 && bin_index < _num_bins) {
 		omp_set_lock(&_lock);

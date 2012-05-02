@@ -57,7 +57,8 @@ protected:
 	std::vector<Surface*> _boundaries;
 
 	/* Region, if any, contained by this Region */
-	Region* _interior_region;
+//	Region* _interior_region;
+	std::vector<Region*> _interior_regions;
 
 	/* Vector of pointers to neutrons contained by this Region */
 	std::vector<neutron*> _neutrons;
@@ -86,7 +87,8 @@ public:
     void setMaterial(Material* material);
     void setVolume(float volume);
     void addBinner(Binner* bins);
-    void setInteriorRegion(Region* region);
+//    void setInteriorRegion(Region* region);
+    void addInteriorRegion(Region* region);
     void addNeutron(neutron* neutron);
 
     void useImplicitCapture(float weight_low, float weight_avg);
