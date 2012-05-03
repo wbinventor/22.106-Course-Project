@@ -428,6 +428,8 @@ void Region::moveNeutrons() {
 			/* Update the neutron time */
 			updateNeutronTime(curr, path_length);
 
+			log_printf(DEBUG, "New neutron time: %f", curr->_time);
+
 			/* Update the neutron position */
 			curr->_x = new_x;
 			curr->_y = new_y;

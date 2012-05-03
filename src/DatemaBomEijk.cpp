@@ -19,20 +19,25 @@ void DatemaBomEijk(Options* options) {
 	log_printf(NORMAL, "num batches = %d", num_batches);
 
 	BatchBinSet* detector_tot_coll_rate = new BatchBinSet();
+	BatchBinSet* detector_coll_rate_time = new BatchBinSet();
 	BatchBinSet* tot_coll_rate_x = new BatchBinSet();
 	BatchBinSet* tot_coll_rate_y = new BatchBinSet();
 	BatchBinSet* tot_coll_rate_z = new BatchBinSet();
 	BatchBinSet* tot_coll_rate_rz = new BatchBinSet();
 
 	BatchBinSet* detector_coll_rates = new BatchBinSet[16];
-	for (int i=0; i < 16; i++)
+
+	for (int i=0; i < 16; i++) {
 		detector_coll_rates[i].createBinners(-25, 25, 14, num_batches,
 										COLLISION_RATE, LINEAR, X);
+	}
 
 	ZCylinder mine, atmosphere, dirt;
 
 	detector_tot_coll_rate->createBinners(1E-5, 1E7, 1,
 			num_batches, COLLISION_RATE, LINEAR, ENERGY);
+	detector_coll_rate_time->createBinners(100, 200, 25, num_batches,
+										COLLISION_RATE, LINEAR, TIME);
 	tot_coll_rate_x->createBinners(-50.0, 50.0, 200, num_batches,
 			COLLISION_RATE, LINEAR, X);
 	tot_coll_rate_y->createBinners(-50.0, 50.0, 200, num_batches,
@@ -470,7 +475,7 @@ void DatemaBomEijk(Options* options) {
 	mine_cylinder->setLeftRegion(&mine);
 	mine_cylinder->setRightRegion(&dirt);
 
-	dirt.addInteriorRegion(&mine);
+//	dirt.addInteriorRegion(&mine);
 
 	/* Set up detector */
 	float tube_radius = 1.25;	/* cm */
@@ -572,6 +577,7 @@ void DatemaBomEijk(Options* options) {
 
 			/* Add the detector collision rate binner over energy */
 			detectors[k].addBinner(detector_tot_coll_rate->getBinner(i));
+			detectors[k].addBinner(detector_coll_rate_time->getBinner(i));
 			detectors[k].addBinner(detector_coll_rates[k].getBinner(i));
 			detectors[k].addBinner(tot_coll_rate_x->getBinner(i));
 			detectors[k].addBinner(tot_coll_rate_y->getBinner(i));
@@ -637,6 +643,8 @@ void DatemaBomEijk(Options* options) {
 
 
 	detector_tot_coll_rate->computeScaledBatchStatistics(num_neutrons);
+	detector_coll_rate_time->computeScaledBatchStatistics(num_neutrons);
+
 	for (int i=0; i < 16; i++)
 		detector_coll_rates[i].computeScaledBatchStatistics(num_neutrons);
 
@@ -646,6 +654,7 @@ void DatemaBomEijk(Options* options) {
 	tot_coll_rate_rz->computeScaledBatchStatistics(num_neutrons);
 
 	detector_tot_coll_rate->outputBatchStatistics((const char*)"detector_coll_rate.txt");
+	detector_coll_rate_time->outputBatchStatistics((const char*)"tot_coll_rate_time.txt");
 	tot_coll_rate_x->outputBatchStatistics((const char*)"tot_coll_rate_x.txt");
 	tot_coll_rate_y->outputBatchStatistics((const char*)"tot_coll_rate_z.txt");
 	tot_coll_rate_z->outputBatchStatistics((const char*)"tot_coll_rate_y.txt");
@@ -664,6 +673,8 @@ void DatemaBomEijk(Options* options) {
 
 	fclose(output_file);
 
+	detector_coll_rate_time->plotBatchMu((const char*)"coll_rate_time",
+					(const char*)"time [us]", (const char*)"collision rate");
 	tot_coll_rate_x->plotBatchMu((const char*)"tot_coll_rate_x",
 					(const char*)"x position",
 					(const char*)"Collision rate per source neutron");

@@ -15,7 +15,7 @@
 #include <math.h>
 
 #define C 3E2				/* Speed of light (m/us) */
-#define M_N 939.565E6		/* Mass of neutron in eV */
+#define M_N 939.565E6		/* Mass of neutron in eV / c */
 
 
 /* Structure to represent a neutron */

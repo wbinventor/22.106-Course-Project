@@ -36,7 +36,8 @@ neutron* initializeNewNeutron() {
 void updateNeutronTime(neutron* neutron, float path_length) {
 
 	/* Compute velocity in m/s */
-	double velocity = sqrt(2.0 * neutron->_energy / M_N) * C;
+//	double velocity = sqrt(2.0 * neutron->_energy / M_N) * C;
+	double velocity = sqrt(2.0 * neutron->_energy / M_N) * C * C;
 
 	/* Update neutron's time */
 	neutron->_time += path_length / velocity;
