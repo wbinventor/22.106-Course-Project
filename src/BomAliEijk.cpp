@@ -1,18 +1,17 @@
 /*
- * DatemaBomEijk.cpp
+ * BomAliEijk.cpp
  *
- *  Created on: May 3, 2012
+ *  Created on: Apr 26, 2012
  *      Author: wboyd
  */
 
-
-#include "DatemaBomEijk.h"
-
-
-void DatemaBomEijk(Options* options) {
+#include "BomAliEijk.h"
 
 
-	double N_A = 6.023E23;		/* Avogadro's number */
+double N_A = 6.023E23;		/* Avogadro's number */
+
+
+void BomAliEijk(Options* options) {
 
 	int num_neutrons = options->getNumNeutrons();
 	int num_batches = options->getNumBatches();
@@ -20,22 +19,22 @@ void DatemaBomEijk(Options* options) {
 	log_printf(NORMAL, "num batches = %d", num_batches);
 
 	BatchBinSet* detector_tot_coll_rate = new BatchBinSet();
-	BatchBinSet* left_detector_tot_coll_rate = new BatchBinSet();
-	BatchBinSet* right_detector_tot_coll_rate = new BatchBinSet();
 	BatchBinSet* detector_coll_rate_time = new BatchBinSet();
 	BatchBinSet* tot_coll_rate_x = new BatchBinSet();
 	BatchBinSet* tot_coll_rate_y = new BatchBinSet();
 	BatchBinSet* tot_coll_rate_z = new BatchBinSet();
 	BatchBinSet* tot_coll_rate_rz = new BatchBinSet();
 
+	BatchBinSet* detector_coll_rates = new BatchBinSet[16];
+
+	for (int i=0; i < 16; i++) {
+		detector_coll_rates[i].createBinners(-25, 25, 14, num_batches,
+										COLLISION_RATE, LINEAR, X);
+	}
+
 	ZCylinder mine, atmosphere, dirt;
-	Parallelepiped reflector;
 
 	detector_tot_coll_rate->createBinners(1E-5, 1E7, 1,
-			num_batches, COLLISION_RATE, LINEAR, ENERGY);
-	left_detector_tot_coll_rate->createBinners(1E-5, 1E7, 1,
-			num_batches, COLLISION_RATE, LINEAR, ENERGY);
-	right_detector_tot_coll_rate->createBinners(1E-5, 1E7, 1,
 			num_batches, COLLISION_RATE, LINEAR, ENERGY);
 	detector_coll_rate_time->createBinners(10, 200, 50, num_batches,
 										COLLISION_RATE, LINEAR, TIME);
@@ -64,9 +63,6 @@ void DatemaBomEijk(Options* options) {
 	float rho_C12_tnt = rho_tnt * 0.370 * N_A / 12.0;
 	float rho_N14_tnt = rho_tnt * 0.185 * N_A / 14.0;
 	float rho_O16_tnt = rho_tnt * 0.423 * N_A / 16.0;
-
-	/* Reflector density from Wikipedia - graphite */
-	float rho_C12_reflector = 2.267 * N_A / 12.0;
 
 	/* Soil isotopic from paper by Elsheikh, Habbani, ElAgib,
 	 * 2011 (g/cm^3) with natural isotope fractions taken from Wikipedia */
@@ -163,7 +159,7 @@ void DatemaBomEijk(Options* options) {
 	/* Declare and initialize all isotopes in problem */
 	Isotope Al27, Ar40, B10, B11, C12, Ca40, Ca42, Ca44, Fe54, Fe56, Fe57, Fe58;
 	Isotope H1, He3, K39, K41, Mg24, Mg25, Mg26, N14, Na23, O16, Si28, Si29, Si30;
-	Material soil, air, detector_gas, tnt, graphite;
+	Material soil, air, detector_gas, tnt;
 
 	/* Aluminum 27 */
 	Al27.setA(27);
@@ -381,21 +377,17 @@ void DatemaBomEijk(Options* options) {
 	tnt.addIsotope(&O16, rho_O16_tnt);
 	tnt.rescaleCrossSections(1E-5, 2E6, 50000);
 
-	graphite.setMaterialName("reflector");
-	graphite.addIsotope(&C12, rho_C12_reflector);
-	graphite.rescaleCrossSections(1E-5, 2E6, 50000);
-
 	/* Setup atmosphere cylinder */
 	ZCircle* atmosphere_top = new ZCircle();
 	atmosphere_top->setBoundaryType(VACUUM);
-	atmosphere_top->setRadius(100.0);
+	atmosphere_top->setRadius(50.0);
 	atmosphere_top->setX0(0.0);
 	atmosphere_top->setY0(0.0);
 	atmosphere_top->setZ0(75.0);
 
 	ZCircle* atmosphere_dirt_interface = new ZCircle();
 	atmosphere_dirt_interface->setBoundaryType(INTERFACE);
-	atmosphere_dirt_interface->setRadius(100.0);
+	atmosphere_dirt_interface->setRadius(50.0);
 	atmosphere_dirt_interface->setX0(0.0);
 	atmosphere_dirt_interface->setY0(0.0);
 	atmosphere_dirt_interface->setZ0(0.0);
@@ -405,9 +397,9 @@ void DatemaBomEijk(Options* options) {
 	atmosphere_cylinder->setX0(0.0);
 	atmosphere_cylinder->setY0(0.0);
 	atmosphere_cylinder->setZ0(0.0);
-	atmosphere_cylinder->setRadius(100.0);
+	atmosphere_cylinder->setRadius(50.0);
 	atmosphere_cylinder->setZLeft(0.0);
-	atmosphere_cylinder->setZRight(100.0);
+	atmosphere_cylinder->setZRight(75.0);
 
 	atmosphere.setRegionName((char*)"atmosphere");
 	atmosphere.setMaterial(&air);
@@ -418,7 +410,7 @@ void DatemaBomEijk(Options* options) {
 	/* Set up dirt cylinder */
 	ZCircle* dirt_bottom = new ZCircle();
 	dirt_bottom->setBoundaryType(VACUUM);
-	dirt_bottom->setRadius(100.0);
+	dirt_bottom->setRadius(50.0);
 	dirt_bottom->setX0(0.0);
 	dirt_bottom->setY0(0.0);
 	dirt_bottom->setZ0(-50.0);
@@ -428,7 +420,7 @@ void DatemaBomEijk(Options* options) {
 	dirt_cylinder->setX0(0.0);
 	dirt_cylinder->setY0(0.0);
 	dirt_cylinder->setZ0(0.0);
-	dirt_cylinder->setRadius(100.0);
+	dirt_cylinder->setRadius(50.0);
 	dirt_cylinder->setZLeft(-50.0);
 	dirt_cylinder->setZRight(0.0);
 
@@ -448,26 +440,26 @@ void DatemaBomEijk(Options* options) {
 	/* Set up mine cylinder */
 	ZCircle* mine_top = new ZCircle();
 	mine_top->setBoundaryType(INTERFACE);
-	mine_top->setRadius(10.0);
+	mine_top->setRadius(6);
 	mine_top->setX0(0.0);
-	mine_top->setY0(-50.0);
-	mine_top->setZ0(-3.0);
+	mine_top->setY0(0.0);
+	mine_top->setZ0(-6.0);
 
 	ZCircle* mine_bottom = new ZCircle();
 	mine_bottom->setBoundaryType(INTERFACE);
-	mine_bottom->setRadius(10.0);
+	mine_bottom->setRadius(6);
 	mine_bottom->setX0(0.0);
-	mine_bottom->setY0(-50.0);
-	mine_bottom->setZ0(-5.0);
+	mine_bottom->setY0(0.0);
+	mine_bottom->setZ0(-8.0);
 
 	OpenZCylinder* mine_cylinder = new OpenZCylinder();
 	mine_cylinder->setBoundaryType(INTERFACE);
-	mine_cylinder->setRadius(10.0);
+	mine_cylinder->setRadius(6.0);
 	mine_cylinder->setX0(0.0);
-	mine_cylinder->setY0(-50.0);
+	mine_cylinder->setY0(0.0);
 	mine_cylinder->setZ0(-5.0);
-	mine_cylinder->setZLeft(-5.0);
-	mine_cylinder->setZRight(-3.0);
+	mine_cylinder->setZLeft(-8.0);
+	mine_cylinder->setZRight(-6.0);
 
 	mine.setRegionName((char*)"mine");
 	mine.setMaterial(&tnt);
@@ -483,76 +475,28 @@ void DatemaBomEijk(Options* options) {
 	mine_cylinder->setLeftRegion(&mine);
 	mine_cylinder->setRightRegion(&dirt);
 
-	dirt.addInteriorRegion(&mine);
+//	dirt.addInteriorRegion(&mine);
 
-	/* Set up reflector */
-	XPlane* reflector_x_left = new XPlane();
-	XPlane* reflector_x_right = new XPlane;
-	YPlane* reflector_y_left = new YPlane();
-	YPlane* reflector_y_right = new YPlane;
-	ZPlane* reflector_z_left = new ZPlane();
-	ZPlane* reflector_z_right = new ZPlane;
-
-	reflector_x_left->setX(-10.0);
-	reflector_x_right->setX(10.0);
-	reflector_y_left->setY(-10.0);
-	reflector_y_right->setY(10.0);
-	reflector_z_left->setZ(7.0);
-	reflector_z_right->setZ(15.0);
-
-	reflector_x_left->setBoundaryType(INTERFACE);
-	reflector_x_right->setBoundaryType(INTERFACE);
-	reflector_y_left->setBoundaryType(INTERFACE);
-	reflector_y_right->setBoundaryType(INTERFACE);
-	reflector_z_left->setBoundaryType(INTERFACE);
-	reflector_z_right->setBoundaryType(INTERFACE);
-
-	reflector.setRegionName((char*)"reflector");
-	reflector.setXLeftSurface(reflector_x_left);
-	reflector.setXRightSurface(reflector_x_right);
-	reflector.setYLeftSurface(reflector_y_left);
-	reflector.setYRightSurface(reflector_y_right);
-	reflector.setZLeftSurface(reflector_z_left);
-	reflector.setZRightSurface(reflector_z_right);
-	reflector.setMaterial(&graphite);
-
-	reflector_x_left->setRightRegion(&reflector);
-	reflector_x_left->setLeftRegion(&atmosphere);
-	reflector_x_right->setLeftRegion(&reflector);
-	reflector_x_right->setRightRegion(&atmosphere);
-
-	reflector_y_left->setRightRegion(&reflector);
-	reflector_y_left->setLeftRegion(&atmosphere);
-	reflector_y_right->setLeftRegion(&reflector);
-	reflector_y_right->setRightRegion(&atmosphere);
-
-	reflector_z_left->setRightRegion(&reflector);
-	reflector_z_left->setLeftRegion(&atmosphere);
-	reflector_z_right->setLeftRegion(&reflector);
-	reflector_z_right->setRightRegion(&atmosphere);
-
-	atmosphere.addInteriorRegion(&reflector);
-
-	/* Set up detectors */
+	/* Set up detector */
 	float tube_radius = 1.25;	/* cm */
-	float tube_pitch = 16.0;		/* cm */
-	float curr_y = -8.0;		/* cm */
-	XCylinder* detectors = new XCylinder[2];
-	XCircle* detector_lefts = new XCircle[2];
-	XCircle* detector_rights = new XCircle[2];
-	OpenXCylinder* detector_cylinders = new OpenXCylinder[2];
+	float tube_pitch = 3.4;		/* cm */
+	float curr_y = -27.2;		/* cm */
+	XCylinder* detectors = new XCylinder[16];
+	XCircle* detector_lefts = new XCircle[16];
+	XCircle* detector_rights = new XCircle[16];
+	OpenXCylinder* detector_cylinders = new OpenXCylinder[16];
 
-	for (int i=0; i < 2; i++) {
+	for (int i=0; i < 16; i++) {
 
 		detector_lefts[i].setBoundaryType(INTERFACE);
 		detector_lefts[i].setRadius(tube_radius);
-		detector_lefts[i].setX0(-7.5);
+		detector_lefts[i].setX0(-25.0);
 		detector_lefts[i].setY0(curr_y);
 		detector_lefts[i].setZ0(5.0);
 
 		detector_rights[i].setBoundaryType(INTERFACE);
 		detector_rights[i].setRadius(tube_radius);
-		detector_rights[i].setX0(7.5);
+		detector_rights[i].setX0(25.0);
 		detector_rights[i].setY0(curr_y);
 		detector_rights[i].setZ0(5.0);
 
@@ -561,8 +505,8 @@ void DatemaBomEijk(Options* options) {
 		detector_cylinders[i].setX0(0.0);
 		detector_cylinders[i].setY0(curr_y);
 		detector_cylinders[i].setZ0(5.0);
-		detector_cylinders[i].setXLeft(-7.5);
-		detector_cylinders[i].setXRight(7.5);
+		detector_cylinders[i].setXLeft(-25.0);
+		detector_cylinders[i].setXRight(25.0);
 
 		detectors[i].setRegionName((char*)"detector");
 		detectors[i].setMaterial(&detector_gas);
@@ -591,7 +535,7 @@ void DatemaBomEijk(Options* options) {
 		dirt.useImplicitCapture(w_low, w_avg);
 		mine.useImplicitCapture(w_low, w_avg);
 
-		for (int i=0; i < 2; i++)
+		for (int i=0; i < 16; i++)
 			detectors[i].useImplicitCapture(w_low, w_avg);
 	}
 
@@ -605,224 +549,177 @@ void DatemaBomEijk(Options* options) {
 			detectors[i].useForcedCollision(w_low, w_avg);
 	}
 
-	/* Initialize arrays for detector coll rates */
-	float tot_detector_coll_rate_mu[50];
-	float tot_detector_coll_rate_std_dev[50];
-	float left_detector_coll_rates_mu[50];
-	float right_detector_coll_rates_mu[50];
-	float left_detector_coll_rates_std_dev[50];
-	float right_detector_coll_rates_std_dev[50];
 
-	/* Loop over mine position */
-	for (int m=0; m < 50; m++) {
+	/* Loop over batches */
+	for (int i=0; i < num_batches; i++) {
 
-		/* Loop over batches */
-		for (int i=0; i < num_batches; i++) {
+		/* Load atmosphere with neutrons */
+		for (int j=0; j < num_neutrons; j++) {
+			neutron* new_neutron = initializeNewNeutron();
+			new_neutron->_energy = 2.45E6;
+			new_neutron->_mu = -1.0;
+			new_neutron->_phi = (float(rand()) / RAND_MAX) * 2.0 * M_PI;
+			new_neutron->_thread_num = 1;
+			/* Mimic a 10 us pulsed neutron generator */
+			new_neutron->_time = (float(rand()) / RAND_MAX) * 10.0;
+			new_neutron->_weight = 1.0;
+			new_neutron->_x = 0.0;
+			new_neutron->_y = 0.0;
+			new_neutron->_z = 6.5;
 
-			/* Load atmosphere with neutrons */
-			for (int j=0; j < num_neutrons; j++) {
-				neutron* new_neutron = initializeNewNeutron();
-				new_neutron->_energy = 2.45E6;
-				new_neutron->_mu = (float(rand()) / RAND_MAX) * 2.0 - 1.0;
-				new_neutron->_phi = (float(rand()) / RAND_MAX) * 2.0 * M_PI;
-				new_neutron->_thread_num = 1;
-				/* Mimic a 10 us pulsed neutron generator */
-				new_neutron->_time = (float(rand()) / RAND_MAX) * 10.0;
-				new_neutron->_weight = 1.0;
-				new_neutron->_x = 0.0;
-				new_neutron->_y = 0.0;
-				new_neutron->_z = 5.0;
-
-				atmosphere.addNeutron(new_neutron);
-			}
-
-			/* Clear the Binners for each Region */
-			atmosphere.clearBinners();
-			dirt.clearBinners();
-			mine.clearBinners();
-
-			detectors[0].addBinner(detector_tot_coll_rate->getBinner(i));
-			detectors[1].addBinner(detector_tot_coll_rate->getBinner(i));
-			detectors[0].addBinner(left_detector_tot_coll_rate->getBinner(i));
-			detectors[1].addBinner(right_detector_tot_coll_rate->getBinner(i));
-
-			/* Add collision rate binners over space to each region */
-//			atmosphere.addBinner(tot_coll_rate_x->getBinner(i));
-//			reflector.addBinner(tot_coll_rate_x->getBinner(i));
-//			dirt.addBinner(tot_coll_rate_x->getBinner(i));
-//			mine.addBinner(tot_coll_rate_x->getBinner(i));
-//
-//			atmosphere.addBinner(tot_coll_rate_y->getBinner(i));
-//			reflector.addBinner(tot_coll_rate_y->getBinner(i));
-//			dirt.addBinner(tot_coll_rate_y->getBinner(i));
-//			mine.addBinner(tot_coll_rate_y->getBinner(i));
-//
-//			atmosphere.addBinner(tot_coll_rate_z->getBinner(i));
-//			reflector.addBinner(tot_coll_rate_y->getBinner(i));
-//			dirt.addBinner(tot_coll_rate_z->getBinner(i));
-//			mine.addBinner(tot_coll_rate_z->getBinner(i));
-//
-//			atmosphere.addBinner(tot_coll_rate_rz->getBinner(i));
-//			reflector.addBinner(tot_coll_rate_y->getBinner(i));
-//			dirt.addBinner(tot_coll_rate_rz->getBinner(i));
-//			mine.addBinner(tot_coll_rate_rz->getBinner(i));
-
-			int num_alive = num_neutrons;
-			int in_detector = 0;
-			log_printf(NORMAL, "Testing neutrons inside of Datema, Bom, Eijk mine/detector geometry");
-
-			while (num_alive != 0) {
-
-				log_printf(NORMAL, "batch # = %d\tnum alive = %d\tin air = %d\tin dirt = %d"
-						"\tin mine = %d\tin detector = %d\tin reflector = %d", i, num_alive,
-						atmosphere.getNumNeutrons(), dirt.getNumNeutrons(),
-						mine.getNumNeutrons(), in_detector, reflector.getNumNeutrons());
-
-				atmosphere.moveNeutrons();
-				reflector.moveNeutrons();
-				dirt.moveNeutrons();
-				mine.moveNeutrons();
-
-				in_detector = 0;
-				for (int k=0; k < 2; k++) {
-					detectors[k].moveNeutrons();
-					detector_lefts[k].moveNeutrons();
-					detector_rights[k].moveNeutrons();
-					detector_cylinders[k].moveNeutrons();
-					in_detector += detectors[k].getNumNeutrons();
-				}
-
-
-				atmosphere_cylinder->moveNeutrons();
-				dirt_cylinder->moveNeutrons();
-				mine_cylinder->moveNeutrons();
-				atmosphere_top->moveNeutrons();
-				atmosphere_dirt_interface->moveNeutrons();
-				dirt_bottom->moveNeutrons();
-				mine_top->moveNeutrons();
-				mine_bottom->moveNeutrons();
-				mine_cylinder->moveNeutrons();
-				reflector_x_left->moveNeutrons();
-				reflector_x_right->moveNeutrons();
-				reflector_y_left->moveNeutrons();
-				reflector_y_right->moveNeutrons();
-				reflector_z_left->moveNeutrons();
-				reflector_z_right->moveNeutrons();
-
-				num_alive = atmosphere.getNumNeutrons() + dirt.getNumNeutrons() +
-						mine.getNumNeutrons() + in_detector + reflector.getNumNeutrons();
-			}
+			atmosphere.addNeutron(new_neutron);
 		}
 
-		/* Record left and right detector statistics */
-		detector_tot_coll_rate->computeScaledBatchStatistics(num_neutrons);
-		left_detector_tot_coll_rate->computeScaledBatchStatistics(num_neutrons);
-		right_detector_tot_coll_rate->computeScaledBatchStatistics(num_neutrons);
+		/* Clear the Binners for each Region */
+		atmosphere.clearBinners();
+		dirt.clearBinners();
+		mine.clearBinners();
 
-		tot_detector_coll_rate_mu[m] = detector_tot_coll_rate->getBatchMu()[0];
-		tot_detector_coll_rate_std_dev[m] = detector_tot_coll_rate->getBatchStdDev()[0];
-		left_detector_coll_rates_mu[m] = left_detector_tot_coll_rate->getBatchMu()[0];
-		right_detector_coll_rates_mu[m] = right_detector_tot_coll_rate->getBatchMu()[0];
-		left_detector_coll_rates_std_dev[m] = left_detector_tot_coll_rate->getBatchStdDev()[0];
-		right_detector_coll_rates_std_dev[m] = right_detector_tot_coll_rate->getBatchStdDev()[0];
+		for (int k=0; k < 16; k++) {
+			detectors[k].clearBinners();
 
-		/* Print results to the screen */
-		log_printf(RESULT, "Detector coll rate: mu = %1.10f\t var = %1.10f",
-				detector_tot_coll_rate->getBatchMu()[0],
-				detector_tot_coll_rate->getBatchVariance()[0]);
-		log_printf(RESULT, "Left Detector coll rate: mu = %1.10f\t var = %1.10f",
-				left_detector_tot_coll_rate->getBatchMu()[0],
-				left_detector_tot_coll_rate->getBatchVariance()[0]);
-		log_printf(RESULT, "Right Detector coll rate: mu = %1.10f\t var = %1.10f",
-				right_detector_tot_coll_rate->getBatchMu()[0],
-				right_detector_tot_coll_rate->getBatchVariance()[0]);
-
-		/* Reset left and right detector coll rates binners */
-		for (int k=0; k < num_batches; k++) {
-			detector_tot_coll_rate->getBinner(k)->getTallies()[0] = 0.0;
-			left_detector_tot_coll_rate->getBinner(k)->getTallies()[0] = 0.0;
-			right_detector_tot_coll_rate->getBinner(k)->getTallies()[0] = 0.0;
+			/* Add the detector collision rate binner over energy */
+			detectors[k].addBinner(detector_tot_coll_rate->getBinner(i));
+			detectors[k].addBinner(detector_coll_rate_time->getBinner(i));
+			detectors[k].addBinner(detector_coll_rates[k].getBinner(i));
+			detectors[k].addBinner(tot_coll_rate_x->getBinner(i));
+			detectors[k].addBinner(tot_coll_rate_y->getBinner(i));
+			detectors[k].addBinner(tot_coll_rate_z->getBinner(i));
+			detectors[k].addBinner(tot_coll_rate_rz->getBinner(i));
 		}
 
-		/* Reset mine location */
-		mine_top->setY0(-50.0 + (m+1.0)*2.0);
-		mine_bottom->setY0(-50.0 + (m+1.0)*2.0);
-		mine_cylinder->setY0(-50.0 +(m+1.0)*2.0);
+		/* Add collision rate binners over space to each region */
+		atmosphere.addBinner(tot_coll_rate_x->getBinner(i));
+		dirt.addBinner(tot_coll_rate_x->getBinner(i));
+		mine.addBinner(tot_coll_rate_x->getBinner(i));
+
+		atmosphere.addBinner(tot_coll_rate_y->getBinner(i));
+		dirt.addBinner(tot_coll_rate_y->getBinner(i));
+		mine.addBinner(tot_coll_rate_y->getBinner(i));
+
+		atmosphere.addBinner(tot_coll_rate_z->getBinner(i));
+		dirt.addBinner(tot_coll_rate_z->getBinner(i));
+		mine.addBinner(tot_coll_rate_z->getBinner(i));
+
+		atmosphere.addBinner(tot_coll_rate_rz->getBinner(i));
+		dirt.addBinner(tot_coll_rate_rz->getBinner(i));
+		mine.addBinner(tot_coll_rate_rz->getBinner(i));
+
+		int num_alive = num_neutrons;
+		int in_detector = 0;
+		log_printf(NORMAL, "Testing neutrons inside of Bom, Ali, Eijk mine/detector geometry");
+
+		while (num_alive != 0) {
+
+			log_printf(NORMAL, "batch # = %d\tnum alive = %d\tin air = %d\tin dirt = %d"
+					"\tin mine = %d\tin detector = %d", i, num_alive,
+					atmosphere.getNumNeutrons(), dirt.getNumNeutrons(),
+					mine.getNumNeutrons(), in_detector);
+
+			atmosphere.moveNeutrons();
+			dirt.moveNeutrons();
+			mine.moveNeutrons();
+
+			in_detector = 0;
+			for (int k=0; k < 16; k++) {
+				detectors[k].moveNeutrons();
+				detector_lefts[k].moveNeutrons();
+				detector_rights[k].moveNeutrons();
+				detector_cylinders[k].moveNeutrons();
+				in_detector += detectors[k].getNumNeutrons();
+			}
+
+			atmosphere_cylinder->moveNeutrons();
+			dirt_cylinder->moveNeutrons();
+			mine_cylinder->moveNeutrons();
+			atmosphere_top->moveNeutrons();
+			atmosphere_dirt_interface->moveNeutrons();
+			dirt_bottom->moveNeutrons();
+			mine_top->moveNeutrons();
+			mine_bottom->moveNeutrons();
+			mine_cylinder->moveNeutrons();
+
+			num_alive = atmosphere.getNumNeutrons() + dirt.getNumNeutrons() +
+					mine.getNumNeutrons() + in_detector;
+		}
 	}
 
 
-//	detector_coll_rate_time->computeScaledBatchStatistics(num_neutrons);
+	detector_tot_coll_rate->computeScaledBatchStatistics(num_neutrons);
+	detector_coll_rate_time->computeScaledBatchStatistics(num_neutrons);
 
-//	tot_coll_rate_x->computeScaledBatchStatistics(num_neutrons);
-//	tot_coll_rate_y->computeScaledBatchStatistics(num_neutrons);
-//	tot_coll_rate_z->computeScaledBatchStatistics(num_neutrons);
-//	tot_coll_rate_rz->computeScaledBatchStatistics(num_neutrons);
-//
-//	detector_coll_rate_time->outputBatchStatistics((const char*)"tot_coll_rate_time.txt");
-//	tot_coll_rate_x->outputBatchStatistics((const char*)"tot_coll_rate_x.txt");
-//	tot_coll_rate_y->outputBatchStatistics((const char*)"tot_coll_rate_z.txt");
-//	tot_coll_rate_z->outputBatchStatistics((const char*)"tot_coll_rate_y.txt");
-//	tot_coll_rate_rz->outputBatchStatistics((const char*)"tot_coll_rate_rz.txt");
+	for (int i=0; i < 16; i++)
+		detector_coll_rates[i].computeScaledBatchStatistics(num_neutrons);
+
+	tot_coll_rate_x->computeScaledBatchStatistics(num_neutrons);
+	tot_coll_rate_y->computeScaledBatchStatistics(num_neutrons);
+	tot_coll_rate_z->computeScaledBatchStatistics(num_neutrons);
+	tot_coll_rate_rz->computeScaledBatchStatistics(num_neutrons);
+
+	detector_tot_coll_rate->outputBatchStatistics((const char*)"detector_coll_rate.txt");
+	detector_coll_rate_time->outputBatchStatistics((const char*)"tot_coll_rate_time.txt");
+	tot_coll_rate_x->outputBatchStatistics((const char*)"tot_coll_rate_x.txt");
+	tot_coll_rate_y->outputBatchStatistics((const char*)"tot_coll_rate_z.txt");
+	tot_coll_rate_z->outputBatchStatistics((const char*)"tot_coll_rate_y.txt");
+	tot_coll_rate_rz->outputBatchStatistics((const char*)"tot_coll_rate_rz.txt");
+
+
 
 	/* Create output file */
 	FILE* output_file;
-	output_file = fopen("datemabomeijk2001.txt", "w");
+	output_file = fopen("detector_coll_rates.txt", "w");
 
-	/* Print each detector collision rate to a file */
-	for (int i=0; i < 50; i++) {
-		fprintf(output_file, "%f, %1.10f, %1.10f, %1.10f, %1.10f, %1.10f, %1.10f\n",
-				-50.0+i*2.0, left_detector_coll_rates_mu[i], left_detector_coll_rates_std_dev[i],
-				right_detector_coll_rates_mu[i], right_detector_coll_rates_std_dev[i],
-				tot_detector_coll_rate_mu[i], tot_detector_coll_rate_std_dev[i]);
+	/* Print header to output file */
+	for (int i=0; i < 16; i++) {
+		for (int j=0; j < 14; j++)
+			fprintf(output_file, "%f, ", detector_coll_rates[i].getBatchMu()[j]);
+		fprintf(output_file, "\n");
 	}
 
 	fclose(output_file);
 
+	detector_coll_rate_time->plotBatchMu((const char*)"coll_rate_time",
+					(const char*)"time [us]", (const char*)"collision rate");
+	tot_coll_rate_x->plotBatchMu((const char*)"tot_coll_rate_x",
+					(const char*)"x position",
+					(const char*)"Collision rate per source neutron");
+	tot_coll_rate_y->plotBatchMu((const char*)"tot_coll_rate_y",
+					(const char*)"y position",
+					(const char*)"Collision rate per source neutron");
+	tot_coll_rate_z->plotBatchMu((const char*)"tot_coll_rate_z",
+					(const char*)"z position",
+					(const char*)"Collision rate per source neutron");
+	tot_coll_rate_rz->plotBatchMu((const char*)"tot_coll_rate_r",
+					(const char*)"r position",
+					(const char*)"Collision rate per source neutron");
 
-	/* Create output file */
-//	FILE* output_file;
-//	output_file = fopen("detector_coll_rates.txt", "w");
-//
-//	fclose(output_file);
-//
-//	detector_coll_rate_time->plotBatchMu((const char*)"coll_rate_time",
-//					(const char*)"time [us]", (const char*)"collision rate");
-//	tot_coll_rate_x->plotBatchMu((const char*)"tot_coll_rate_x",
-//					(const char*)"x position",
-//					(const char*)"Collision rate per source neutron");
-//	tot_coll_rate_y->plotBatchMu((const char*)"tot_coll_rate_y",
-//					(const char*)"y position",
-//					(const char*)"Collision rate per source neutron");
-//	tot_coll_rate_z->plotBatchMu((const char*)"tot_coll_rate_z",
-//					(const char*)"z position",
-//					(const char*)"Collision rate per source neutron");
-//	tot_coll_rate_rz->plotBatchMu((const char*)"tot_coll_rate_r",
-//					(const char*)"r position",
-//					(const char*)"Collision rate per source neutron");
-//
-//	gnuplot_ctrl* handle = gnuplot_init();
-//	gnuplot_set_xlabel(handle, (char*)"position [cm]");
-//	gnuplot_set_ylabel(handle, (char*)"collision rate / source neutron");
-//	gnuplot_setstyle(handle, (char*)"dots");
-//	gnuplot_plot_xy(handle, tot_coll_rate_x->getBinner(0)->getBinCenters(),
-//			tot_coll_rate_x->getBatchMu(),
-//			tot_coll_rate_x->getBinner(0)->getNumBins(), (char*)"Coll. Rate vs. x");
-//	gnuplot_plot_xy(handle, tot_coll_rate_y->getBinner(0)->getBinCenters(),
-//			tot_coll_rate_y->getBatchMu(),
-//			tot_coll_rate_y->getBinner(0)->getNumBins(), (char*)"Coll. Rate vs. y");
-//	gnuplot_plot_xy(handle, tot_coll_rate_z->getBinner(0)->getBinCenters(),
-//			tot_coll_rate_z->getBatchMu(),
-//			tot_coll_rate_z->getBinner(0)->getNumBins(), (char*)"Coll. Rate vs. z");
-//	gnuplot_saveplot(handle, (char*)"position_collision_rates");
-//	gnuplot_plot_xy(handle, tot_coll_rate_rz->getBinner(0)->getBinCenters(),
-//			tot_coll_rate_rz->getBatchMu(),
-//			tot_coll_rate_rz->getBinner(0)->getNumBins(), (char*)"Coll. Rate vs. r");
-//	gnuplot_close(handle);
+	gnuplot_ctrl* handle = gnuplot_init();
+	gnuplot_set_xlabel(handle, (char*)"position [cm]");
+	gnuplot_set_ylabel(handle, (char*)"collision rate / source neutron");
+	gnuplot_setstyle(handle, (char*)"dots");
+	gnuplot_plot_xy(handle, tot_coll_rate_x->getBinner(0)->getBinCenters(),
+			tot_coll_rate_x->getBatchMu(),
+			tot_coll_rate_x->getBinner(0)->getNumBins(), (char*)"Coll. Rate vs. x");
+	gnuplot_plot_xy(handle, tot_coll_rate_y->getBinner(0)->getBinCenters(),
+			tot_coll_rate_y->getBatchMu(),
+			tot_coll_rate_y->getBinner(0)->getNumBins(), (char*)"Coll. Rate vs. y");
+	gnuplot_plot_xy(handle, tot_coll_rate_z->getBinner(0)->getBinCenters(),
+			tot_coll_rate_z->getBatchMu(),
+			tot_coll_rate_z->getBinner(0)->getNumBins(), (char*)"Coll. Rate vs. z");
+	gnuplot_saveplot(handle, (char*)"position_collision_rates");
+	gnuplot_plot_xy(handle, tot_coll_rate_rz->getBinner(0)->getBinCenters(),
+			tot_coll_rate_rz->getBatchMu(),
+			tot_coll_rate_rz->getBinner(0)->getNumBins(), (char*)"Coll. Rate vs. r");
+	gnuplot_close(handle);
+
+
+	log_printf(NORMAL, "Detector coll rate: mu = %1.10f\t std dev = %1.15f",
+			detector_tot_coll_rate->getBatchMu()[0],
+			detector_tot_coll_rate->getBatchStdDev()[0]);
 
 
 	delete detector_tot_coll_rate;
-	delete left_detector_tot_coll_rate;
-	delete right_detector_tot_coll_rate;
+	delete [] detector_coll_rates;
 	delete tot_coll_rate_x;
 	delete tot_coll_rate_y;
 	delete tot_coll_rate_z;

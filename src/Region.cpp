@@ -253,9 +253,20 @@ Surface* Region::computeMinSurfDist(neutron* neutron, float* min_dist) {
 //		log_printf(NORMAL, "computed curr dist = %1.8f", curr_dist);
 
 		if (curr_dist < *min_dist) {
-//			log_printf(NORMAL, "updated min dist");
-			*min_dist = curr_dist;
-			nearest = interior_region_test;
+			float vx = cos(neutron->_phi) * sin(acos(neutron->_mu));
+			float vy = sin(neutron->_phi) * sin(acos(neutron->_mu));
+			float vz = neutron->_mu;
+
+			float t = curr_dist / sqrt(vx*vx + vy*vy + vz*vz);
+			float new_x = neutron->_x + vx*t + vx*TINY_MOVE;
+			float new_y = neutron->_y + vy*t + vy*TINY_MOVE;
+			float new_z = neutron->_z + vz*t + vz*TINY_MOVE;
+
+			if ((*iter2)->contains(new_x, new_y, new_z)) {
+	//			log_printf(NORMAL, "updated min dist");
+				*min_dist = curr_dist;
+				nearest = interior_region_test;
+			}
 		}
 	}
 
@@ -347,6 +358,8 @@ void Region::moveNeutrons() {
 		/* Compute path length and the new x,y,z coordinates of this neutron */
 		path_length = -log(float(rand()) / RAND_MAX) / sigma_t;
 
+		nearest = computeMinSurfDist(curr, &min_dist);
+
 		theta = acos(curr->_mu);
 		new_x = curr->_x + path_length * cos(curr->_phi) * sin(theta);
 		new_y = curr->_y + path_length * sin(curr->_phi) * sin(theta);
@@ -414,7 +427,7 @@ void Region::moveNeutrons() {
 
 
 		/* The neutron collided within this region */
-		if (contains(new_x, new_y, new_z)) {
+		if (contains(new_x, new_y, new_z) && path_length < min_dist) {
 
 			/* Figure out which isotope the neutron collided in */
 			isotope = _material->sampleIsotope(energy_index);
@@ -669,7 +682,7 @@ void Region::moveNeutrons() {
 			}
 
 			/* Play Russian Roulette with neutron */
-			if (curr->_weight < _weight_low && _use_implicit_capture) {
+			if (curr->_weight < _weight_low && (_use_implicit_capture || _use_forced_collision)) {
 				if (playRussianRoulette(curr)) {
 					log_printf(DEBUG, "Killing neutron");
 					iter1 = _neutrons.erase(iter1);
@@ -758,6 +771,12 @@ void Parallelepiped::setZRightSurface(ZPlane* plane) {
 
 bool Parallelepiped::contains(float x, float y, float z) {
 
+//	log_printf(NORMAL, "Inside parallelepied contains method with x = %f, y = %f, z = %f", x, y, z);
+//	log_printf(NORMAL, "x left = %f, y left = %f, z left = %f", _x_left_surface->getX(),
+//									_y_left_surface->getY(), _z_left_surface->getZ());
+//	log_printf(NORMAL, "x right = %f, y right = %f, z right = %f", _x_right_surface->getX(),
+//									_y_right_surface->getY(), _z_right_surface->getZ());
+
 	if (inInteriorRegion(x, y, z))
 		return false;
 	else if (x < _x_left_surface->getX() || x > _x_right_surface->getX())
@@ -778,8 +797,10 @@ bool Parallelepiped::contains(float x, float y, float z) {
 		return false;
 	else if (_z_right_surface->onSurface(x, y, z))
 		return false;
-	else
+	else {
+//		log_printf(NORMAL, "returning true for x = %f, y = %f, z = %f", x, y, z);
 		return true;
+	}
 }
 
 

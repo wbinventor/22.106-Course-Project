@@ -160,7 +160,7 @@ float XPlane::computeDistance(neutron* neutron) {
  * @return if on the XPlane (true), otherwise false
  */
 bool XPlane::onSurface(neutron* neutron) {
-	if (fabs(_x - neutron->_x) < 1E-6)
+	if (fabs(_x - neutron->_x) < 1E-8)
 		return true;
 
 	return false;
@@ -174,7 +174,7 @@ bool XPlane::onSurface(neutron* neutron) {
  * @return if on the XPlane (true), otherwise false
  */
 bool XPlane::onSurface(float x, float y, float z) {
-	if (fabs(_x - x) < 1E-6)
+	if (fabs(_x - x) < 1E-8)
 		return true;
 
 	return false;
@@ -220,7 +220,7 @@ void XPlane::moveNeutrons() {
 			curr->_z += vz*TINY_MOVE;
 
 			/* Figure out which region to put neutron in */
-			if (phi > 0.0 && phi <= M_PI)
+			if (vx < 0.0)
 				_left_region->addNeutron(curr);
 			else
 				_right_region->addNeutron(curr);
@@ -313,7 +313,7 @@ float YPlane::computeDistance(neutron* neutron) {
  * @return if on the YPlane (true), otherwise false
  */
 bool YPlane::onSurface(neutron* neutron) {
-	if (fabs(_y - neutron->_y) < 1E-6)
+	if (fabs(_y - neutron->_y) < 1E-8)
 		return true;
 
 	return false;
@@ -326,7 +326,7 @@ bool YPlane::onSurface(neutron* neutron) {
  * @return if on the YPlane (true), otherwise false
  */
 bool YPlane::onSurface(float x, float y, float z) {
-	if (fabs(_y - y) < 1E-6)
+	if (fabs(_y - y) < 1E-8)
 		return true;
 
 	return false;
@@ -371,7 +371,7 @@ void YPlane::moveNeutrons() {
 			curr->_z += vz*TINY_MOVE;
 
 			/* Figure out which region to put neutron in */
-			if (phi > PI_OVER_TWO && phi <= THREE_PI_OVER_TWO)
+			if (vy < 0.0)
 				_left_region->addNeutron(curr);
 			else
 				_right_region->addNeutron(curr);
@@ -413,6 +413,8 @@ void ZPlane::addNeutron(neutron* neutron) {
 	float x = neutron->_x;
 	float y = neutron->_y;
 	float z = neutron->_z;
+
+//	log_printf(NORMAL, "Adding neutron x = %f, y = %f z = %f to z0 = %f plane", x, y, z, _z);
 
 	float vx = cos(neutron->_phi) * sin(acos(neutron->_mu));
 	float vy = sin(neutron->_phi) * sin(acos(neutron->_mu));
@@ -463,7 +465,7 @@ float ZPlane::computeDistance(neutron* neutron) {
  * @return if on the ZPlane (true), otherwise false
  */
 bool ZPlane::onSurface(neutron* neutron) {
-	if (fabs(_z - neutron->_z) < 1E-6)
+	if (fabs(_z - neutron->_z) < 1E-8)
 		return true;
 
 	return false;
@@ -477,7 +479,7 @@ bool ZPlane::onSurface(neutron* neutron) {
  * @return if on the ZPlane (true), otherwise false
  */
 bool ZPlane::onSurface(float x, float y, float z) {
-	if (fabs(_z - z) < 1E-6)
+	if (fabs(_z - z) < 1E-8)
 		return true;
 
 	return false;
@@ -521,7 +523,7 @@ void ZPlane::moveNeutrons() {
 			curr->_z += vz*TINY_MOVE;
 
 			/* Figure out which region to put neutron in */
-			if (curr->_mu < 0.0)
+			if (vz < 0.0)
 				_left_region->addNeutron(curr);
 			else
 				_right_region->addNeutron(curr);

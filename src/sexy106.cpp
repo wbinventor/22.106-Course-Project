@@ -22,6 +22,7 @@
 #include "Material.h"
 #include "Neutron.h"
 #include "Region.h"
+#include "BomAliEijk.h"
 #include "DatemaBomEijk.h"
 #include "BaysoySubasi.h"
 #include "testregions.h"
@@ -37,10 +38,16 @@ int main(int argc, const char **argv) {
 	if (options.testRegions())
 		testRegions(&options);
 
-
+	timer.start();
 //	BaysoySubasi(&options);
 
-	DatemaBomEijk(&options);
+	if (options.bomAliEijk())
+		BomAliEijk(&options);
+
+	if (options.datemaBomEijk())
+		DatemaBomEijk(&options);
+	timer.stop();
+	timer.recordSplit("Time");
 
 	timer.printSplits();
 

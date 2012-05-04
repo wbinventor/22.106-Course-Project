@@ -27,6 +27,8 @@ Options::Options(int argc, const char **argv) {
 	_num_neutrons = 1000;
 	_num_threads = 1;
 	_test_regions = false;
+	_datema_bom_eijk = false;
+	_bom_ali_eijk = false;
 	_soil_type = DRY_POROUS;
 	_use_implicit_capture = false;
 	_use_forced_collision = false;
@@ -46,6 +48,10 @@ Options::Options(int argc, const char **argv) {
 				_num_threads = atoi(argv[i]);
 			else if (LAST("-tr"))
 				_test_regions = true;
+			else if (LAST("-datema"))
+				_datema_bom_eijk = true;
+			else if (LAST("-bom"))
+				_bom_ali_eijk = true;
 			else if (LAST("-dp"))
 				_soil_type = DRY_POROUS;
 			else if (LAST("-dd"))
@@ -54,9 +60,9 @@ Options::Options(int argc, const char **argv) {
 				_soil_type = WET_POROUS;
 			else if (LAST("-wd"))
 				_soil_type = WET_DENSE;
-			else if (strcmp(argv[i], "-ic") == 0)
+			else if (LAST("-ic"))
 				_use_implicit_capture = true;
-			else if (strcmp(argv[i], "-fc") == 0)
+			else if (LAST("-fc"))
 				_use_forced_collision = true;
 			else if (LAST("-wavg"))
 				_weight_avg = atof(argv[i]);
@@ -91,6 +97,15 @@ int Options::getNumThreads() const {
 
 bool Options::testRegions() const {
 	return _test_regions;
+}
+
+bool Options::datemaBomEijk() const {
+	return _datema_bom_eijk;
+}
+
+
+bool Options::bomAliEijk() const {
+	return _bom_ali_eijk;
 }
 
 soilType Options::getSoilType() const {

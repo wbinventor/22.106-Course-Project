@@ -731,6 +731,10 @@ CollisionRateBinner::~CollisionRateBinner() { };
 void CollisionRateBinner::weightedTally(neutron* neutron, float sigma_t,
 				int energy_index, Material* material, Isotope* isotope){
 
+
+	if (neutron->_time < 20.0 || neutron->_time > 200.0)
+		return;
+
 	if (_num_bins == 0)
 		 log_printf(ERROR, "Cannot tally weighted sample in Binner %s since "
 				 "the bins have not yet been created", _name);

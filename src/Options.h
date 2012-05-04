@@ -32,6 +32,8 @@ private:
 	int _num_neutrons;
 	int _num_threads;
 	bool _test_regions;
+	bool _datema_bom_eijk;
+	bool _bom_ali_eijk;
 	soilType _soil_type;
 	bool _use_implicit_capture;
 	bool _use_forced_collision;
@@ -46,6 +48,8 @@ public:
     int getNumNeutrons() const;
     int getNumThreads() const;
     bool testRegions() const;
+    bool datemaBomEijk() const;
+    bool bomAliEijk() const;
     soilType getSoilType() const;
     bool useImplicitCapture() const;
     bool useForcedCollision() const;
